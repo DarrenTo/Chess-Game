@@ -3,6 +3,78 @@ package controller;
 public interface IChessBoard {
 
     /**
+     * Setup Chessboard according to FEN code
+     * @param fen The FEN code
+     *
+     * https://www.chess.com/terms/fen-chess
+     *
+     *            Piece Placement
+     *              Squares are represented beginning from 8th row (top row) and ending at the 1st row (bottom row)
+     *              Each row starts from the 1st column (leftmost) and ending at the 8th column (rightmost)
+     *
+     *              - "/" denotes end of line
+     *              - Lowercase letters denote black pieces (p,r,n,b,q,k)
+     *              - Uppercase letters denote white pieces (P,R,N,B,Q,K)
+     *              - Empty squares denoted by numbers 1-8 depending on the number of empty squares between two pieces
+     *
+     *            Active Color
+     *              A single lowercase letter representing whose turn it is
+     *
+     *              - "w" indicates white's turn whereas "b" indicates black's turn
+     *
+     *            Castling Rights
+     *              White castling privileges represented first followed by black castling privileges
+     *
+     *              - Uppercase letters denote white castling privileges ("K" for kingside/"Q" for queenside)
+     *              - Lowercase letters denote black castling privileges ("k" for kingside/"q" for queenside)
+     *              - "-" denotes no castling privileges on either side for either color
+     *
+     *            En Passant Targets
+     *              If a pawn can be captured via en passant, the square behind said pawn is noted
+     *              This uses chess notation (1-8 indicates row, a-h represents column)
+     *              The absence of an enemy pawn threatening en passant does not affect this notation
+     *
+     *              - Chess notation represents square behind the pawn which is a target for en passant
+     *              - "-" indicates no en passant targets present
+     *
+     *            HalfMove Clock
+     *              Represents the moves both players have made since the last pawn advance or piece capture
+     *              Used to enforce the 50-move draw rule
+     *
+     *             - Halfmove clock resets to 0 after a pawn move or piece capture
+     *             - Game ends in a draw when the halfmove clock reaches 100
+     *
+     *            Fullmove number
+     *              Represents the number of completed turn
+     *
+     *            - Incremented by 1 every time black moves
+     *
+     *            Example FEN codes
+     *
+     *            rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1 (standard starting position)
+     *
+     *            rnbqkbnr/pppppppp/8/8/4P3/8/PPPP1PPP/RNBQKBNR b KQkq e3 0 1 (after white moves pawn to e4)
+     *
+     *            rnbqkbnr/pp1ppppp/8/2p5/4P3/8/PPPP1PPP/RNBQKBNR w KQkq c6 0 2 (after black moves pawn to c5)
+     *
+     *            rnbqkbnr/pp1ppppp/8/2p5/4P3/5N2/PPPP1PPP/RNBQKB1R b KQkq - 1 2 (after white moves knight to f3)
+     *
+     *            Note: Threefold repetition not represented with this notation
+     *
+     */
+    void FENSetup(String fen);
+
+    /**
+     * Get the piece at a specific position
+     *
+     * @param x The x position
+     * @param y The y position
+     *
+     * @return The piece at the x,y position or null if nothing is there
+     */
+    Piece getPositionStatus(int x, int y);
+
+    /**
      * Looks for checks or checkmate on the king for the moving side
      * e.g. White's turn to move, they are the 'moving side'
      * @return CheckStatus
@@ -32,13 +104,4 @@ public interface IChessBoard {
      */
     boolean MovePiece(Piece piece, int x, int y);
 
-    /**
-     * Get the piece at a specific position
-     *
-     * @param x The x position
-     * @param y The y position
-     *
-     * @return The piece at the x,y position or null if nothing is there
-     */
-    Piece getPositionStatus(int x, int y);
 }
