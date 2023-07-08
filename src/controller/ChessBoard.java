@@ -21,7 +21,7 @@ public class ChessBoard implements IChessBoard{
 
     @Override
     public boolean FENSetup(String fen) {
-        return false;
+        return true;
     }
 
     @Override
