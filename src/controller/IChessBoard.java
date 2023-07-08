@@ -35,6 +35,7 @@ public interface IChessBoard {
      *              The absence of an enemy pawn threatening en passant does not affect this notation
      *
      *              - Chess notation represents square behind the pawn which is a target for en passant
+     *                  - only row 3 and 6 are valid targets in accordance with traditional chess
      *              - "-" indicates no en passant targets present
      *
      *            HalfMove Clock
@@ -43,11 +44,13 @@ public interface IChessBoard {
      *
      *             - Halfmove clock resets to 0 after a pawn move or piece capture
      *             - Game ends in a draw when the halfmove clock reaches 100
+     *             - any number <0 or >100 is invalid
      *
      *            Fullmove number
      *              Represents the number of completed turn
      *
      *            - Incremented by 1 every time black moves
+     *            - Any number >9999 (4 digits) is invalid to prevent excessive FEN lengths
      *
      *            Example FEN codes
      *
@@ -61,8 +64,12 @@ public interface IChessBoard {
      *
      *            Note: Threefold repetition not represented with this notation
      *
+     * @return boolean
+     *
+     * Should return true if fen is valid, otherwise false
+     *
      */
-    void FENSetup(String fen);
+    boolean FENSetup(String fen);
 
     /**
      * Get the piece at a specific position

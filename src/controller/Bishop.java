@@ -5,8 +5,12 @@ import javafx.util.Pair;
 import java.util.ArrayList;
 import java.util.List;
 
+import static controller.PieceName.BISHOP;
+import static controller.PieceName.PAWN;
+
 public class Bishop implements Piece{
 
+    static PieceName name = BISHOP;
     ChessBoard board;
     Color color;
     Pair<Integer, Integer> position;
@@ -32,5 +36,9 @@ public class Bishop implements Piece{
 
     public Pair<Integer, Integer> getPosition() {
         return position;
+    }
+
+    public PieceName getName() {
+        return name;
     }
 }

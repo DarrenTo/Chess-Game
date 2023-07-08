@@ -2,6 +2,7 @@ package controller;
 
 public class SimpleThreefoldRepetition implements IThreefoldRepetition{
 
+    // only checks for a consecutive threefold repetition
     public SimpleThreefoldRepetition() {
 
     }

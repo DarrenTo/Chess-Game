@@ -5,8 +5,11 @@ import javafx.util.Pair;
 import java.util.ArrayList;
 import java.util.List;
 
-public class King implements Piece{
+import static controller.PieceName.KING;
+import static controller.PieceName.PAWN;
 
+public class King implements Piece{
+    static PieceName name = KING;
     ChessBoard board;
     Color color;
     Pair<Integer, Integer> position;
@@ -32,5 +35,9 @@ public class King implements Piece{
 
     public Pair<Integer, Integer> getPosition() {
         return position;
+    }
+
+    public PieceName getName() {
+        return name;
     }
 }

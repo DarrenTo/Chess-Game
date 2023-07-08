@@ -2,18 +2,17 @@ package controller;
 
 import javafx.util.Pair;
 
+import java.util.List;
+
 public class ChessBoard implements IChessBoard{
     protected Piece[][] chessBoard;
     private boolean enPassantAvailable;
     private Pair<Integer, Integer> enPassantPos;
     private int halfmoveClock;
     private int fullmoveNumber;
-    private Piece prevMoveWhitePiece;
-    private Piece prevMoveBlackPiece;
-    private Pair<Integer, Integer> prevMoveWhitePos;
-    private Pair<Integer, Integer> prevMoveBlackPos;
-    private Pair<Integer, Integer> blackKingPos;
-    private Pair<Integer, Integer> whiteKingPos;
+    private IThreefoldRepetition threefoldRep;
+    private List<Pair<Integer, Integer>> blackKingPos;
+    private List<Pair<Integer, Integer>> whiteKingPos;
 
     public ChessBoard() {
         enPassantAvailable = false;
@@ -21,8 +20,8 @@ public class ChessBoard implements IChessBoard{
     }
 
     @Override
-    public void FENSetup(String fen) {
-
+    public boolean FENSetup(String fen) {
+        return false;
     }
 
     @Override
