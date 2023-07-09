@@ -1,4 +1,4 @@
-package controller.piece;
+package model.pieces;
 
 public class BishopTest {
 }

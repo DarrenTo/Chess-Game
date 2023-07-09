@@ -1,4 +1,6 @@
-package controller;
+package model;
+
+import model.pieces.Piece;
 
 public interface IThreefoldRepetition {
 

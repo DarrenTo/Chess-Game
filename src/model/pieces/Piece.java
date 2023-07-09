@@ -1,4 +1,4 @@
-package controller;
+package model.pieces;
 
 import javafx.util.Pair;
 

@@ -1,4 +1,7 @@
-package controller;
+package model;
+
+import model.enums.CheckStatus;
+import model.pieces.Piece;
 
 public interface IChessBoard {
 

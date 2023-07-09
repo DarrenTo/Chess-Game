@@ -1,4 +1,4 @@
-package controller;
+package model.enums;
 
 public enum CheckStatus {
     NOT_IN_CHECK,

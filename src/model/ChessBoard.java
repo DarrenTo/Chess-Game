@@ -1,6 +1,8 @@
-package controller;
+package model;
 
 import javafx.util.Pair;
+import model.enums.CheckStatus;
+import model.pieces.Piece;
 
 import java.util.List;
 

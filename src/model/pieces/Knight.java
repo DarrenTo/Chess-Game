@@ -1,20 +1,22 @@
-package controller;
+package model.pieces;
 
 import javafx.util.Pair;
+import model.ChessBoard;
+import model.enums.Color;
+import model.enums.PieceName;
+import model.pieces.Piece;
 
 import java.util.ArrayList;
 import java.util.List;
 
-import static controller.PieceName.BISHOP;
-import static controller.PieceName.PAWN;
+import static model.enums.PieceName.KNIGHT;
 
-public class Bishop implements Piece{
-
-    static PieceName name = BISHOP;
+public class Knight implements Piece {
+    static PieceName name = KNIGHT;
     ChessBoard board;
     Color color;
     Pair<Integer, Integer> position;
-    public Bishop(int x, int y, ChessBoard board, Color color) {
+    public Knight(int x, int y, ChessBoard board, Color color) {
         this.board = board;
         this.position = new Pair<>(x, y);
         this.color = color;
