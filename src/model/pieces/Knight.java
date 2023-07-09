@@ -2,6 +2,7 @@ package model.pieces;
 
 import javafx.util.Pair;
 import model.ChessBoard;
+import model.IChessBoard;
 import model.enums.Color;
 import model.enums.PieceName;
 import model.pieces.Piece;
@@ -13,10 +14,10 @@ import static model.enums.PieceName.KNIGHT;
 
 public class Knight implements Piece {
     static PieceName name = KNIGHT;
-    ChessBoard board;
+    IChessBoard board;
     Color color;
     Pair<Integer, Integer> position;
-    public Knight(int x, int y, ChessBoard board, Color color) {
+    public Knight(int x, int y, IChessBoard board, Color color) {
         this.board = board;
         this.position = new Pair<>(x, y);
         this.color = color;
