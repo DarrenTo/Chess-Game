@@ -35,9 +35,15 @@ public interface Piece {
      */
      List<Pair<Integer, Integer>> FindValidMoves();
 
+    /**
+     * Returns color of piece
+      * @return Color
+     */
     Color getColor();
 
-    Pair<Integer, Integer> getPosition();
-
+    /**
+     * Returns the name of the piece
+     * @return PieceName
+     */
     PieceName getName();
 }
