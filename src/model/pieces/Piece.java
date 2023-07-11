@@ -1,6 +1,8 @@
 package model.pieces;
 
 import javafx.util.Pair;
+import model.enums.Color;
+import model.enums.PieceName;
 
 import java.util.List;
 
@@ -32,4 +34,10 @@ public interface Piece {
      * The list should be empty if no valid moves
      */
      List<Pair<Integer, Integer>> FindValidMoves();
+
+    Color getColor();
+
+    Pair<Integer, Integer> getPosition();
+
+    PieceName getName();
 }

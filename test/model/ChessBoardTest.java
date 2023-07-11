@@ -96,6 +96,24 @@ public class ChessBoardTest {
                 assertTrue(board.FENSetup("rnbqkbnr/pppppppp/pppppppp/8/8/PPPPPPPP/PPPPPPPP/RNBQKBNR w KQkq - 0 1"));
             }
 
+            @Test
+            @DisplayName("Invalid pawn in first row")
+            void InvalidPawn() {
+                assertFalse(board.FENSetup("ppbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1"));
+            }
+
+            @Test
+            @DisplayName("Invalid pawn in eighth row")
+            void InvalidPawn2() {
+                assertFalse(board.FENSetup("rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/PPBQKBNR w KQkq - 0 1"));
+            }
+
+            @Test
+            @DisplayName("Valid pawn in middle rows")
+            void ValidPawn() {
+                assertTrue(board.FENSetup("rnbqkbnr/pppppppp/pp6/8/PP6/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1"));
+            }
+
         }
 
         @Nested
@@ -166,8 +184,14 @@ public class ChessBoardTest {
             }
 
             @Test
-            @DisplayName("Valid No Castle")
+            @DisplayName("Valid Castle Combo2")
             void ValidCharCastle3() {
+                assertTrue(board.FENSetup("rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w qKk - 0 1"));
+            }
+
+            @Test
+            @DisplayName("Valid No Castle")
+            void ValidCharCastle4() {
                 assertTrue(board.FENSetup("rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w - - 0 1"));
             }
         }
@@ -387,21 +411,45 @@ public class ChessBoardTest {
             }
 
             @Test
-            @DisplayName("Invalid pawn in first row")
-            void InvalidMisc12() {
-                assertFalse(board.FENSetup("ppbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1"));
+            @DisplayName("Short FEN; in piece placement")
+            void ShortFEN1() {
+                assertFalse(board.FENSetup("rnbqkbnr/ppppppp"));
             }
 
             @Test
-            @DisplayName("Invalid pawn in eighth row")
-            void InvalidMisc13() {
-                assertFalse(board.FENSetup("rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/PPBQKBNR w KQkq - 0 1"));
+            @DisplayName("Short FEN; in piece placement with slash")
+            void ShortFEN2() {
+                assertFalse(board.FENSetup("rnbqkbnr/pppppppp/"));
             }
 
             @Test
-            @DisplayName("Valid pawn in middle rows")
-            void ValidMisc5() {
-                assertTrue(board.FENSetup("rnbqkbnr/pppppppp/pp6/8/PP6/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1"));
+            @DisplayName("Short FEN; only piece placement")
+            void ShortFEN3() {
+                assertFalse(board.FENSetup("rnbqkbnr/pppppppp/pp6/8/PP6/8/PPPPPPPP/RNBQKBNR "));
+            }
+
+            @Test
+            @DisplayName("Short FEN; with color")
+            void ShortFEN4() {
+                assertFalse(board.FENSetup("rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w "));
+            }
+
+            @Test
+            @DisplayName("Short FEN; with castling")
+            void ShortFEN5() {
+                assertFalse(board.FENSetup("rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq "));
+            }
+
+            @Test
+            @DisplayName("Short FEN; with target")
+            void ShortFEN6() {
+                assertFalse(board.FENSetup("rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - "));
+            }
+
+            @Test
+            @DisplayName("Short FEN; with halfmove")
+            void ShortFEN7() {
+                assertFalse(board.FENSetup("rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 "));
             }
 
             @Test
@@ -416,7 +464,6 @@ public class ChessBoardTest {
     @Nested
     @DisplayName("getPositionStatus")
     class PositionStatusTest {
-
     }
 
     @Nested
