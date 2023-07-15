@@ -11,7 +11,7 @@ import java.util.List;
 
 import static model.enums.Color.BLACK;
 import static model.enums.Color.WHITE;
-import static model.enums.PieceName.KING;
+import static model.enums.PieceName.*;
 
 public class ChessBoard implements IChessBoard{
     protected Piece[][] chessBoard;
@@ -23,7 +23,7 @@ public class ChessBoard implements IChessBoard{
     private Pair<Integer, Integer> enPassantPos;
     private int halfmoveClock;
     private int fullmoveNumber;
-    private IThreefoldRepetition threefoldRep;
+    private final IThreefoldRepetition threefoldRep;
     private List<Pair<Integer, Integer>> blackKingPos;
     private List<Pair<Integer, Integer>> whiteKingPos;
     private static final Pair<String, String> INVALID_FEN = new Pair<>("", "");
@@ -34,6 +34,9 @@ public class ChessBoard implements IChessBoard{
     private static final byte BLACK_QUEEN_CASTLE_MASK = 0b0001;
     private static final Pair<Integer, Integer> INVALID_TARGET = new Pair<>(-1,-1);
     private static final Pair<Integer, Integer> NO_TARGET = new Pair<>(-2,-2);
+    private static final int EMPTY_SQUARE = -1;
+    private static final int NOT_IN_CHECK = -2;
+    private static final int IN_CHECK = -3;
 
     public ChessBoard() {
         chessBoard = new Piece[8][8];
@@ -44,31 +47,30 @@ public class ChessBoard implements IChessBoard{
 
     @Override
     public boolean FENSetup(String fen) {
-        Piece[][] chessBoard;
+        Piece[][] tempChessBoard = this.chessBoard;
         Color activeColor;
         Pair<Integer, Integer> target;
         byte castlingRights;
         int halfmoveClock;
         int fullmoveNumber;
-        Pair<String, String> fenField;
         String[] fields = FENFieldSeparator(fen);
         if(fields == null) {
             return false;
         }
 
-        chessBoard = PiecePlacementCheck(fields[0]);
+        this.chessBoard = PiecePlacementCheck(fields[0]);
         activeColor = ActiveColorCheck(fields[1]);
         castlingRights = CastlingRightsCheck(fields[2]);
         target = EnPassantCheck(fields[3]);
         halfmoveClock = HalfMoveCheck(fields[4]);
         fullmoveNumber = FullMoveCheck(fields[5]);
-        if (chessBoard == null || activeColor == null || castlingRights == INVALID_CASTLE ||
+        if (this.chessBoard == null || activeColor == null || castlingRights == INVALID_CASTLE ||
                 target == INVALID_TARGET || halfmoveClock == -1 || fullmoveNumber == -1 ||
-        IllegalKingCaptureCheck(activeColor, chessBoard)) {
+        IllegalKingCaptureCheck(activeColor, this.chessBoard)) {
+            this.chessBoard = tempChessBoard;
             return false;
         }
 
-        this.chessBoard = chessBoard;
         this.activeColor = activeColor;
         CastlingSetter(castlingRights);
         this.enPassantPos = target;
@@ -122,7 +124,7 @@ public class ChessBoard implements IChessBoard{
                 if((line==0 || line==7)&&type.matches("p|P")) {
                     return null;
                 }
-                board[line][square] = createPiece(type, line, square);
+                board[line][square] = createPiece(type);
                 if(board[line][square] == null) {
                     return null;
                 }
@@ -141,32 +143,32 @@ public class ChessBoard implements IChessBoard{
         return null;
     }
 
-    private Piece createPiece(String type, int x, int y) {
+    private Piece createPiece(String type) {
         switch(type) {
             case "p":
-                return new Pawn(x, y, this, BLACK);
+                return new Pawn(BLACK);
             case "P":
-                return new Pawn(x, y, this, WHITE);
+                return new Pawn(WHITE);
             case "r":
-                return new Rook(x, y, this, BLACK);
+                return new Rook(BLACK);
             case "R":
-                return new Rook(x, y, this, WHITE);
+                return new Rook(WHITE);
             case "n":
-                return new Knight(x, y, this, BLACK);
+                return new Knight(BLACK);
             case "N":
-                return new Knight(x, y, this, WHITE);
+                return new Knight(WHITE);
             case "b":
-                return new Bishop(x, y, this, BLACK);
+                return new Bishop(BLACK);
             case "B":
-                return new Bishop(x, y, this, WHITE);
+                return new Bishop(WHITE);
             case "q":
-                return new Queen(x, y, this, BLACK);
+                return new Queen(BLACK);
             case "Q":
-                return new Queen(x, y, this, WHITE);
+                return new Queen(WHITE);
             case "k":
-                return new King(x, y, this, BLACK);
+                return new King(BLACK);
             case "K":
-                return new King(x, y, this, WHITE);
+                return new King(WHITE);
             default:
                 return null;
         }
@@ -280,8 +282,8 @@ public class ChessBoard implements IChessBoard{
             for(int j = 0; j < board[0].length; j++) {
                 Piece piece = board[i][j];
                 if(piece != null) {
-                    if(piece.getName() == KING && piece.getColor() == activeColor) {
-                        if(checkDirectionalCapture(activeColor, new Pair<>(i, j))) {
+                    if(piece.getName() == KING && piece.getColor() != activeColor) {
+                        if(checkDirectionalCapture(activeColor, new Pair<>(j, i))) {
                             return true;
                         }
                     }
@@ -292,44 +294,186 @@ public class ChessBoard implements IChessBoard{
     }
 
     private boolean checkDirectionalCapture(Color color, Pair<Integer, Integer> pos) {
-        if(checkLeft(color, pos) || checkUpperLeftDiagonal(color, pos) || checkUp(color, pos) ||
-        checkUpperRightDiagonal(color, pos) || checkRight(color, pos) || checkLowerRightDiagonal(color, pos) ||
-        checkDown(color, pos) || checkLowerLeftDiagonal(color, pos)) {
-            return true;
+        return checkLeft(color, pos) || checkUpperLeftDiagonal(color, pos) || checkUp(color, pos) ||
+                checkUpperRightDiagonal(color, pos) || checkRight(color, pos) || checkLowerRightDiagonal(color, pos) ||
+                checkDown(color, pos) || checkLowerLeftDiagonal(color, pos) || checkKnightChecks(color, pos) ||
+                checkPawnChecks(color, pos);
+    }
+
+    private boolean checkLeft(Color attackColor, Pair<Integer, Integer> pos) {
+        int x = pos.getKey();
+        int y = pos.getValue();
+        while(x > 0) {
+            x--;
+            int status= hasXorQueen(attackColor, new Pair<>(x, y), ROOK);
+            if(status == NOT_IN_CHECK) {
+                return false;
+            } else if(status == IN_CHECK) {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    private boolean checkUpperLeftDiagonal(Color attackColor, Pair<Integer, Integer> pos) {
+        int x = pos.getKey();
+        int y = pos.getValue();
+        while(x > 0 && y > 0) {
+            x--;
+            y--;
+            int status= hasXorQueen(attackColor, new Pair<>(x, y), BISHOP);
+            if(status == NOT_IN_CHECK) {
+                return false;
+            } else if(status == IN_CHECK) {
+                return true;
+            }
         }
         return false;
     }
 
-    private boolean checkLeft(Color color, Pair<Integer, Integer> pos) {
-        return true;
+    private boolean checkUp(Color attackColor, Pair<Integer, Integer> pos) {
+        int x = pos.getKey();
+        int y = pos.getValue();
+        while(y > 0) {
+            y--;
+            int status= hasXorQueen(attackColor, new Pair<>(x, y), ROOK);
+            if(status == NOT_IN_CHECK) {
+                return false;
+            } else if(status == IN_CHECK) {
+                return true;
+            }
+        }
+
+        return false;
     }
 
-    private boolean checkUpperLeftDiagonal(Color color, Pair<Integer, Integer> pos) {
-        return true;
+    private boolean checkUpperRightDiagonal(Color attackColor, Pair<Integer, Integer> pos) {
+        int x = pos.getKey();
+        int y = pos.getValue();
+        while(x < 7 && y > 0) {
+            x++;
+            y--;
+            int status= hasXorQueen(attackColor, new Pair<>(x, y), BISHOP);
+            if(status == NOT_IN_CHECK) {
+                return false;
+            } else if(status == IN_CHECK) {
+                return true;
+            }
+        }
+
+        return false;
     }
 
-    private boolean checkUp(Color color, Pair<Integer, Integer> pos) {
-        return true;
+    private boolean checkRight(Color attackColor, Pair<Integer, Integer> pos) {
+        int x = pos.getKey();
+        int y = pos.getValue();
+        while(x < 7) {
+            x++;
+            int status= hasXorQueen(attackColor, new Pair<>(x, y), ROOK);
+            if(status == NOT_IN_CHECK) {
+                return false;
+            } else if(status == IN_CHECK) {
+                return true;
+            }
+        }
+        return false;
     }
 
-    private boolean checkUpperRightDiagonal(Color color, Pair<Integer, Integer> pos) {
-        return true;
+    private boolean checkLowerRightDiagonal(Color attackColor, Pair<Integer, Integer> pos) {
+        int x = pos.getKey();
+        int y = pos.getValue();
+        while(x < 7 && y < 7) {
+            x++;
+            y++;
+            int status= hasXorQueen(attackColor, new Pair<>(x, y), BISHOP);
+            if(status == NOT_IN_CHECK) {
+                return false;
+            } else if(status == IN_CHECK) {
+                return true;
+            }
+        }
+        return false;
     }
 
-    private boolean checkRight(Color color, Pair<Integer, Integer> pos) {
-        return true;
+    private boolean checkDown(Color attackColor, Pair<Integer, Integer> pos) {
+        int x = pos.getKey();
+        int y = pos.getValue();
+        while(y < 7) {
+            y++;
+            int status= hasXorQueen(attackColor, new Pair<>(x, y), ROOK);
+            if(status == NOT_IN_CHECK) {
+                return false;
+            } else if(status == IN_CHECK) {
+                return true;
+            }
+        }
+
+        return false;
     }
 
-    private boolean checkLowerRightDiagonal(Color color, Pair<Integer, Integer> pos) {
-        return true;
+    private boolean checkLowerLeftDiagonal(Color attackColor, Pair<Integer, Integer> pos) {
+        int x = pos.getKey();
+        int y = pos.getValue();
+        while(x > 0 && y < 7) {
+            x--;
+            y++;
+            int status= hasXorQueen(attackColor, new Pair<>(x, y), BISHOP);
+            if(status == NOT_IN_CHECK) {
+                return false;
+            } else if(status == IN_CHECK) {
+                return true;
+            }
+        }
+
+        return false;
     }
 
-    private boolean checkDown(Color color, Pair<Integer, Integer> pos) {
-        return true;
+    private boolean checkKnightChecks(Color attackColor, Pair<Integer, Integer> pos) {
+        int x = pos.getKey();
+        int y = pos.getValue();
+        return (x > 1 && y > 0 && hasKnight(attackColor, new Pair<>(x - 2, y - 1))) ||
+                (x > 0 && y > 1 && hasKnight(attackColor, new Pair<>(x - 1, y - 2))) ||
+                (x < 7 && y > 1 && hasKnight(attackColor, new Pair<>(x + 1, y - 2))) ||
+                (x < 6 && y > 0 && hasKnight(attackColor, new Pair<>(x + 2, y - 1))) ||
+                (x < 6 && y < 7 && hasKnight(attackColor, new Pair<>(x + 2, y + 1))) ||
+                (x < 7 && y < 6 && hasKnight(attackColor, new Pair<>(x + 1, y + 2))) ||
+                (x > 0 && y < 6 && hasKnight(attackColor, new Pair<>(x - 1, y + 2))) ||
+                (x > 1 && y < 7 && hasKnight(attackColor, new Pair<>(x - 2, y + 1)));
+
     }
 
-    private boolean checkLowerLeftDiagonal(Color color, Pair<Integer, Integer> pos) {
-        return true;
+    private boolean checkPawnChecks(Color attackColor, Pair<Integer, Integer> pos) {
+        int x = pos.getKey();
+        int y = pos.getValue();
+        if(attackColor == WHITE) {
+            return x > 0 && y < 7 && hasPawn(attackColor, new Pair<>(x - 1, y + 1)) ||
+                    x < 7 && y < 7 && hasPawn(attackColor, new Pair<>(x + 1, y + 1));
+        }
+
+        return x > 0 && y > 0 && hasPawn(attackColor, new Pair<>(x - 1, y - 1)) ||
+                x < 7 && y > 0 && hasPawn(attackColor, new Pair<>(x + 1, y - 1));
+    }
+
+    private boolean hasKnight(Color attackColor, Pair<Integer, Integer> pos) {
+            Piece piece = getPositionStatus(pos.getKey(), pos.getValue());
+            return piece != null && (piece.getName() == KNIGHT && piece.getColor() == attackColor);
+    }
+
+    private int hasXorQueen(Color attackColor, Pair<Integer, Integer> pos, PieceName x) {
+        Piece piece = getPositionStatus(pos.getKey(), pos.getValue());
+        if(piece == null) {
+            return EMPTY_SQUARE;
+        }
+        if(piece.getColor() == attackColor && (piece.getName() == x || piece.getName() == QUEEN)) {
+            return IN_CHECK;
+        }
+        return NOT_IN_CHECK;
+    }
+
+    private boolean hasPawn(Color attackColor, Pair<Integer, Integer> pos) {
+        Piece piece = getPositionStatus(pos.getKey(), pos.getValue());
+        return piece != null && (piece.getName() == PAWN && piece.getColor() == attackColor);
     }
 
     private void CastlingSetter(byte castle) {
@@ -366,7 +510,7 @@ public class ChessBoard implements IChessBoard{
 
     @Override
     public Piece getPositionStatus(int x, int y) {
-        return chessBoard[x][y];
+        return chessBoard[y][x];
     }
 
     @Override
@@ -375,7 +519,12 @@ public class ChessBoard implements IChessBoard{
     }
 
     @Override
-    public boolean MovePiece(Piece piece, int x, int y) {
+    public boolean MovePiece(int initX, int initY, int endX, int endY) {
         return false;
+    }
+
+    @Override
+    public List<Pair<Integer, Integer>> FindValidMoves(int x, int y) {
+        return null;
     }
 }

@@ -13,34 +13,15 @@ import java.util.List;
 import static model.enums.PieceName.PAWN;
 
 public class Pawn implements Piece {
-
     static PieceName name = PAWN;
-
-    IChessBoard board;
     Color color;
-    Pair<Integer, Integer> position;
-    public Pawn(int x, int y, IChessBoard board, Color color) {
-        this.board = board;
-        this.position = new Pair<>(x, y);
+
+    public Pawn(Color color) {
         this.color = color;
-    }
-
-    @Override
-    public boolean Move(int x, int y) {
-        return false;
-    }
-
-    @Override
-    public List<Pair<Integer, Integer>> FindValidMoves() {
-        return new ArrayList<>();
     }
 
     public Color getColor() {
         return color;
-    }
-
-    public Pair<Integer, Integer> getPosition() {
-        return position;
     }
 
     public PieceName getName() {

@@ -14,31 +14,14 @@ import static model.enums.PieceName.KING;
 
 public class King implements Piece {
     static PieceName name = KING;
-    IChessBoard board;
     Color color;
-    Pair<Integer, Integer> position;
-    public King(int x, int y, IChessBoard board, Color color) {
-        this.board = board;
-        this.position = new Pair<>(x, y);
+
+    public King(Color color) {
         this.color = color;
-    }
-
-    @Override
-    public boolean Move(int x, int y) {
-        return false;
-    }
-
-    @Override
-    public List<Pair<Integer, Integer>> FindValidMoves() {
-        return new ArrayList<>();
     }
 
     public Color getColor() {
         return color;
-    }
-
-    public Pair<Integer, Integer> getPosition() {
-        return position;
     }
 
     public PieceName getName() {

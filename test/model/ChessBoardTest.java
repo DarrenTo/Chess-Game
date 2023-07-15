@@ -411,6 +411,30 @@ public class ChessBoardTest {
             }
 
             @Test
+            @DisplayName("Invalid white first move capture king; pawn")
+            void InvalidMisc12() {
+                assertFalse(board.FENSetup("rnbqkbnr/pppppPpp/8/8/8/8/PPPPP1PP/RNBQKBNR w KQkq - 0 1"));
+            }
+
+            @Test
+            @DisplayName("Invalid black first move capture king; pawn")
+            void InvalidMisc13() {
+                assertFalse(board.FENSetup("rnbqkbnr/ppppp1pp/8/8/8/8/PPPPPpPP/RNBQKBNR b KQkq - 0 1"));
+            }
+
+            @Test
+            @DisplayName("Valid black first move king in check; pawn")
+            void ValidMisc5() {
+                assertTrue(board.FENSetup("rnbqkbnr/pppppPpp/8/8/8/8/PPPPP1PP/RNBQKBNR b KQkq - 0 1"));
+            }
+
+            @Test
+            @DisplayName("Valid white first move king in check; pawn")
+            void ValidMisc6() {
+                assertTrue(board.FENSetup("rnbqkbnr/ppppp1pp/8/8/8/8/PPPPPpPP/RNBQKBNR w KQkq - 0 1"));
+            }
+
+            @Test
             @DisplayName("Short FEN; in piece placement")
             void ShortFEN1() {
                 assertFalse(board.FENSetup("rnbqkbnr/ppppppp"));

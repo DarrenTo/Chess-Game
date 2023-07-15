@@ -1,7 +1,10 @@
 package model;
 
+import javafx.util.Pair;
 import model.enums.CheckStatus;
 import model.pieces.Piece;
+
+import java.util.List;
 
 public interface IChessBoard {
 
@@ -96,9 +99,10 @@ public interface IChessBoard {
     /**
      * Moves a piece if valid
      *
-     * @param piece The piece to be moved
-     * @param x The desired x position after being moved
-     * @param y The desired y position after being moved
+     * @param initX The initial X pos of a piece
+     * @param initY The initial Y pos of a piece
+     * @param endX  The x pos after move
+     * @param endY The y pos after move
      *
      * @return boolean
      *
@@ -112,6 +116,17 @@ public interface IChessBoard {
      *
      * The board and piece should be updated upon a successful move
      */
-    boolean MovePiece(Piece piece, int x, int y);
+    boolean MovePiece(int initX, int initY, int endX, int endY);
+
+    /**
+     * Find all valid moves
+     *
+     * @param x The x pos of a piece
+     * @param y The y pos of a piece
+     *
+     * @return Pair<Integer, Integer>[]
+     * The list should be empty if no valid moves
+     */
+    List<Pair<Integer, Integer>> FindValidMoves(int x, int y);
 
 }
