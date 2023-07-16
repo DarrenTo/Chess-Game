@@ -9,8 +9,8 @@ import model.pieces.*;
 import java.util.ArrayList;
 import java.util.List;
 
-import static model.enums.Color.BLACK;
-import static model.enums.Color.WHITE;
+import static model.enums.Color.*;
+import static model.enums.Direction.*;
 import static model.enums.PieceName.*;
 
 public class ChessBoard implements IChessBoard{
@@ -32,7 +32,7 @@ public class ChessBoard implements IChessBoard{
     private static final byte WHITE_QUEEN_CASTLE_MASK = 0b0100;
     private static final byte BLACK_KING_CASTLE_MASK = 0b0010;
     private static final byte BLACK_QUEEN_CASTLE_MASK = 0b0001;
-    private static final Pair<Integer, Integer> INVALID_TARGET = new Pair<>(-1,-1);
+    private static final Pair<Integer, Integer> INVALID_TARGET = new Pair<>(-3,-3);
     private static final Pair<Integer, Integer> NO_TARGET = new Pair<>(-2,-2);
     private static final int EMPTY_SQUARE = -1;
     private static final int NOT_IN_CHECK = -2;
@@ -294,134 +294,33 @@ public class ChessBoard implements IChessBoard{
     }
 
     private boolean checkDirectionalCapture(Color color, Pair<Integer, Integer> pos) {
-        return checkLeft(color, pos) || checkUpperLeftDiagonal(color, pos) || checkUp(color, pos) ||
-                checkUpperRightDiagonal(color, pos) || checkRight(color, pos) || checkLowerRightDiagonal(color, pos) ||
-                checkDown(color, pos) || checkLowerLeftDiagonal(color, pos) || checkKnightChecks(color, pos) ||
+        return checkDir(color, pos, LEFT.dir, LEFT.limits) ||
+                checkDir(color, pos, UP_LEFT_DIAGONAL.dir, UP_LEFT_DIAGONAL.limits) ||
+                checkDir(color, pos, UP.dir, UP.limits) ||
+                checkDir(color, pos, UP_RIGHT_DIAGONAL.dir, UP_RIGHT_DIAGONAL.limits) ||
+                checkDir(color, pos, RIGHT.dir, RIGHT.limits) ||
+                checkDir(color, pos, DOWN_RIGHT_DIAGONAL.dir, DOWN_RIGHT_DIAGONAL.limits) ||
+                checkDir(color, pos, DOWN.dir, DOWN.limits) ||
+                checkDir(color, pos, DOWN_LEFT_DIAGONAL.dir, DOWN_LEFT_DIAGONAL.limits) ||
+                checkKnightChecks(color, pos) ||
                 checkPawnChecks(color, pos);
     }
 
-    private boolean checkLeft(Color attackColor, Pair<Integer, Integer> pos) {
+    private boolean checkDir(Color attackColor, Pair<Integer, Integer> pos, Pair<Integer, Integer> dir, Pair<Integer, Integer> limits) {
         int x = pos.getKey();
         int y = pos.getValue();
-        while(x > 0) {
-            x--;
-            int status= hasXorQueen(attackColor, new Pair<>(x, y), ROOK);
-            if(status == NOT_IN_CHECK) {
-                return false;
-            } else if(status == IN_CHECK) {
-                return true;
+        while(x != limits.getKey() && y != limits.getValue()) {
+            x += dir.getKey();
+            y += dir.getValue();
+            int status;
+            if(dir.getKey() == 0 || dir.getValue() == 0) {
+                status = hasXorQueen(attackColor, new Pair<>(x, y), ROOK);
+            } else {
+                status = hasXorQueen(attackColor, new Pair<>(x, y), BISHOP);
             }
-        }
-
-        return false;
-    }
-
-    private boolean checkUpperLeftDiagonal(Color attackColor, Pair<Integer, Integer> pos) {
-        int x = pos.getKey();
-        int y = pos.getValue();
-        while(x > 0 && y > 0) {
-            x--;
-            y--;
-            int status= hasXorQueen(attackColor, new Pair<>(x, y), BISHOP);
             if(status == NOT_IN_CHECK) {
                 return false;
-            } else if(status == IN_CHECK) {
-                return true;
-            }
-        }
-        return false;
-    }
-
-    private boolean checkUp(Color attackColor, Pair<Integer, Integer> pos) {
-        int x = pos.getKey();
-        int y = pos.getValue();
-        while(y > 0) {
-            y--;
-            int status= hasXorQueen(attackColor, new Pair<>(x, y), ROOK);
-            if(status == NOT_IN_CHECK) {
-                return false;
-            } else if(status == IN_CHECK) {
-                return true;
-            }
-        }
-
-        return false;
-    }
-
-    private boolean checkUpperRightDiagonal(Color attackColor, Pair<Integer, Integer> pos) {
-        int x = pos.getKey();
-        int y = pos.getValue();
-        while(x < 7 && y > 0) {
-            x++;
-            y--;
-            int status= hasXorQueen(attackColor, new Pair<>(x, y), BISHOP);
-            if(status == NOT_IN_CHECK) {
-                return false;
-            } else if(status == IN_CHECK) {
-                return true;
-            }
-        }
-
-        return false;
-    }
-
-    private boolean checkRight(Color attackColor, Pair<Integer, Integer> pos) {
-        int x = pos.getKey();
-        int y = pos.getValue();
-        while(x < 7) {
-            x++;
-            int status= hasXorQueen(attackColor, new Pair<>(x, y), ROOK);
-            if(status == NOT_IN_CHECK) {
-                return false;
-            } else if(status == IN_CHECK) {
-                return true;
-            }
-        }
-        return false;
-    }
-
-    private boolean checkLowerRightDiagonal(Color attackColor, Pair<Integer, Integer> pos) {
-        int x = pos.getKey();
-        int y = pos.getValue();
-        while(x < 7 && y < 7) {
-            x++;
-            y++;
-            int status= hasXorQueen(attackColor, new Pair<>(x, y), BISHOP);
-            if(status == NOT_IN_CHECK) {
-                return false;
-            } else if(status == IN_CHECK) {
-                return true;
-            }
-        }
-        return false;
-    }
-
-    private boolean checkDown(Color attackColor, Pair<Integer, Integer> pos) {
-        int x = pos.getKey();
-        int y = pos.getValue();
-        while(y < 7) {
-            y++;
-            int status= hasXorQueen(attackColor, new Pair<>(x, y), ROOK);
-            if(status == NOT_IN_CHECK) {
-                return false;
-            } else if(status == IN_CHECK) {
-                return true;
-            }
-        }
-
-        return false;
-    }
-
-    private boolean checkLowerLeftDiagonal(Color attackColor, Pair<Integer, Integer> pos) {
-        int x = pos.getKey();
-        int y = pos.getValue();
-        while(x > 0 && y < 7) {
-            x--;
-            y++;
-            int status= hasXorQueen(attackColor, new Pair<>(x, y), BISHOP);
-            if(status == NOT_IN_CHECK) {
-                return false;
-            } else if(status == IN_CHECK) {
+            } else if (status == IN_CHECK) {
                 return true;
             }
         }
