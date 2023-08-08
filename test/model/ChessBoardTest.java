@@ -1,7 +1,13 @@
 package model;
 
+import model.enums.CheckStatus;
+import model.pieces.Knight;
+import model.pieces.*;
 import org.junit.jupiter.api.*;
 
+import static model.enums.CheckStatus.*;
+import static model.enums.Color.BLACK;
+import static model.enums.Color.WHITE;
 import static org.junit.jupiter.api.Assertions.*;
 
 public class ChessBoardTest {
@@ -112,6 +118,30 @@ public class ChessBoardTest {
             @DisplayName("Valid pawn in middle rows")
             void ValidPawn() {
                 assertTrue(board.FENSetup("rnbqkbnr/pppppppp/pp6/8/PP6/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1"));
+            }
+
+            @Test
+            @DisplayName("No White King")
+            void InvalidNoKing() {
+                assertFalse(board.FENSetup("rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQ1BNR w kq - 0 1"));
+            }
+
+            @Test
+            @DisplayName("No Black King")
+            void InvalidNoKing2() {
+                assertFalse(board.FENSetup("rnbq1bnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQ - 0 1"));
+            }
+
+            @Test
+            @DisplayName("Multi White Kings")
+            void MultiKing() {
+                assertFalse(board.FENSetup("rnbq1bnr/pppppppp/8/8/8/4K3/PPPPPPPP/RNBQKBNR w KQ - 0 1"));
+            }
+
+            @Test
+            @DisplayName("Multi Black Kings")
+            void MultiKing2() {
+                assertFalse(board.FENSetup("rnbqkbnr/pppppppp/3k4/8/8/8/PPPPPPPP/RNBQKBNR w KQ - 0 1"));
             }
 
         }
@@ -488,12 +518,302 @@ public class ChessBoardTest {
     @Nested
     @DisplayName("getPositionStatus")
     class PositionStatusTest {
+        @Test
+        @DisplayName("Standard Board")
+        void StandardTest() {
+            board.FENSetup("rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1");
+            assertEqualPieces(board.getPositionStatus(0, 0), new Rook(BLACK));
+            assertEqualPieces(board.getPositionStatus(1, 0), new Knight(BLACK));
+            assertEqualPieces(board.getPositionStatus(2, 0), new Bishop(BLACK));
+            assertEqualPieces(board.getPositionStatus(3, 0), new Queen(BLACK));
+            assertEqualPieces(board.getPositionStatus(4, 0), new King(BLACK));
+            assertEqualPieces(board.getPositionStatus(5, 0), new Bishop(BLACK));
+            assertEqualPieces(board.getPositionStatus(6, 0), new Knight(BLACK));
+            assertEqualPieces(board.getPositionStatus(7, 0), new Rook(BLACK));
+
+            for(int i = 0; i < 8; i++) {
+                assertEqualPieces(board.getPositionStatus(i, 1), new Pawn(BLACK));
+                assertEqualPieces(board.getPositionStatus(i, 6), new Pawn(WHITE));
+            }
+
+            assertEqualPieces(board.getPositionStatus(0, 7), new Rook(WHITE));
+            assertEqualPieces(board.getPositionStatus(1, 7), new Knight(WHITE));
+            assertEqualPieces(board.getPositionStatus(2, 7), new Bishop(WHITE));
+            assertEqualPieces(board.getPositionStatus(3, 7), new Queen(WHITE));
+            assertEqualPieces(board.getPositionStatus(4, 7), new King(WHITE));
+            assertEqualPieces(board.getPositionStatus(5, 7), new Bishop(WHITE));
+            assertEqualPieces(board.getPositionStatus(6, 7), new Knight(WHITE));
+            assertEqualPieces(board.getPositionStatus(7, 7), new Rook(WHITE));
+
+            for(int i = 2; i < 6; i++) {
+                for(int j = 0; j < 8; j++) {
+                    assertNull(board.getPositionStatus(j, i));
+                }
+            }
+        }
+
+        @Test
+
+        @DisplayName("Early Game Position")
+        void EarlyGameTest() {
+            board.FENSetup("r1bqk2r/ppp1bppp/2n1pn2/8/2BP4/2N1BN2/PPP2PPP/R2Q1RK1 w kq - 0 1");
+            assertEqualPieces(board.getPositionStatus(0,0), new Rook(BLACK));
+            assertNull(board.getPositionStatus(1,0));
+            assertEqualPieces(board.getPositionStatus(2, 0), new Bishop(BLACK));
+            assertEqualPieces(board.getPositionStatus(3, 0), new Queen(BLACK));
+            assertEqualPieces(board.getPositionStatus(4, 0), new King(BLACK));
+            assertNull(board.getPositionStatus(5, 0));
+            assertNull(board.getPositionStatus(6, 0));
+            assertEqualPieces(board.getPositionStatus(7, 0), new Rook(BLACK));
+
+            assertEqualPieces(board.getPositionStatus(0, 1), new Pawn(BLACK));
+            assertEqualPieces(board.getPositionStatus(1, 1), new Pawn(BLACK));
+            assertEqualPieces(board.getPositionStatus(2, 1), new Pawn(BLACK));
+            assertNull(board.getPositionStatus(3,1));
+            assertEqualPieces(board.getPositionStatus(4, 1), new Bishop(BLACK));
+            assertEqualPieces(board.getPositionStatus(5, 1), new Pawn(BLACK));
+            assertEqualPieces(board.getPositionStatus(6, 1), new Pawn(BLACK));
+            assertEqualPieces(board.getPositionStatus(7, 1), new Pawn(BLACK));
+
+            assertNull(board.getPositionStatus(0, 2));
+            assertNull(board.getPositionStatus(1, 2));
+            assertEqualPieces(board.getPositionStatus(2, 2), new Knight(BLACK));
+            assertNull(board.getPositionStatus(3, 2));
+            assertEqualPieces(board.getPositionStatus(4,2), new Pawn(BLACK));
+            assertEqualPieces(board.getPositionStatus(5, 2), new Knight(BLACK));
+            assertNull(board.getPositionStatus(6, 2));
+            assertNull(board.getPositionStatus(7, 2));
+
+            for(int i = 0; i < 8; i++) {
+                assertNull(board.getPositionStatus(i, 3));
+            }
+            for(int i = 0; i < 8; i++) {
+                if(i == 2) {
+                    assertEqualPieces(board.getPositionStatus(i, 4), new Bishop(WHITE));
+                } else if(i == 3) {
+                    assertEqualPieces(board.getPositionStatus(i, 4), new Pawn(WHITE));
+                } else {
+                    assertNull(board.getPositionStatus(i, 4));
+                }
+            }
+
+            assertNull(board.getPositionStatus(0, 5));
+            assertNull(board.getPositionStatus(1, 5));
+            assertEqualPieces(board.getPositionStatus(2, 5), new Knight(WHITE));
+            assertNull(board.getPositionStatus(3, 5));
+            assertEqualPieces(board.getPositionStatus(4,5), new Bishop(WHITE));
+            assertEqualPieces(board.getPositionStatus(5, 5), new Knight(WHITE));
+            assertNull(board.getPositionStatus(6, 5));
+            assertNull(board.getPositionStatus(7, 5));
+
+            assertEqualPieces(board.getPositionStatus(0, 6), new Pawn(WHITE));
+            assertEqualPieces(board.getPositionStatus(1, 6), new Pawn(WHITE));
+            assertEqualPieces(board.getPositionStatus(2, 6), new Pawn(WHITE));
+            assertNull(board.getPositionStatus(3,6));
+            assertNull(board.getPositionStatus(4, 6));
+            assertEqualPieces(board.getPositionStatus(5, 6), new Pawn(WHITE));
+            assertEqualPieces(board.getPositionStatus(6, 6), new Pawn(WHITE));
+            assertEqualPieces(board.getPositionStatus(7, 6), new Pawn(WHITE));
+
+            assertEqualPieces(board.getPositionStatus(0,7), new Rook(WHITE));
+            assertNull(board.getPositionStatus(1,7));
+            assertNull(board.getPositionStatus(2, 7));
+            assertEqualPieces(board.getPositionStatus(3, 7), new Queen(WHITE));
+            assertNull(board.getPositionStatus(4, 7));
+            assertEqualPieces(board.getPositionStatus(5, 7), new Rook(WHITE));
+            assertEqualPieces(board.getPositionStatus(6, 7), new King(WHITE));
+            assertNull(board.getPositionStatus(7, 7));
+        }
     }
 
     @Nested
-    @DisplayName("FindCheck")
-    class FindCheckTest {
+    @DisplayName("FindCheckStatus")
+    class FindCheckStatusTest {
 
+        @Nested
+        @DisplayName("Single King")
+        class SingleKingTest {
+
+            @Test
+            @DisplayName("No Check")
+            void NoCheck() {
+                board.FENSetup("rnbqk2r/pppp1ppp/5n2/4p3/1bB1P3/5N2/PPPP1PPP/RNBQK2R w KQkq - 0 1");
+                assertNoCheck();
+            }
+
+            @Test
+            @DisplayName("Check; Capture Only Option")
+            void CheckOnlyCapture() {
+                board.FENSetup("rnbqkb1r/pppppppp/8/8/8/5n2/PPPPPPPP/RNBQKBNR w KQkq - 0 1");
+                assertCheck();
+            }
+
+            @Test
+            @DisplayName("Check; Move Only Option")
+            void CheckMoveOnlyOption() {
+                board.FENSetup("rnb1kb1r/pppp1ppp/4p3/8/3P3q/3n1P2/PPP1P1PP/RNBQKBNR w KQkq - 0 1");
+                assertCheck();
+            }
+
+            @Test
+            @DisplayName("Check; Move Only Option; Block option pinned")
+            void CheckMoveOnlyOption2() {
+                board.FENSetup("rn1qkbn1/ppppppp1/8/3Q1P2/4P1b1/1B6/PPPP2P1/RNBK2Nr w q - 0 1");
+                assertCheck();
+            }
+
+            @Test
+            @DisplayName("Checkmate; Classic Bishop Queen; Black")
+            void CheckmateBishopQueen() {
+                board.FENSetup("rn2k1nr/pppp1pb1/6p1/3Qp3/4P1b1/1B6/PPPPq1PP/RNB1K2R w q - 0 1");
+                assertCheckmate();
+            }
+
+            @Test
+            @DisplayName("Checkmate; Classic Bishop Queen; White")
+            void CheckmateBishopQueen2() {
+                board.FENSetup("rnb1k2r/ppp1Qppp/3p4/2b1p3/1q2P2B/2NP4/PPP2PPP/R3K1NR b KQkq - 0 1");
+                assertCheckmate();
+            }
+
+            @Test
+            @DisplayName("Checkmate; Bishop Queen Corner")
+            void CheckmateBishopQueen3() {
+                board.FENSetup("8/6k1/8/8/3b4/8/1q6/K7 w - - 0 1");
+                assertCheckmate();
+            }
+
+            @Test
+            @DisplayName("Checkmate; Ladder mate")
+            void CheckmateLadder() {
+                board.FENSetup("8/6k1/8/8/8/8/4r3/K4r2 w - - 0 1");
+                assertCheckmate();
+            }
+
+            @Test
+            @DisplayName("Checkmate; Double Rook")
+            void CheckmateDoubleRook() {
+                board.FENSetup("8/6k1/8/8/8/8/1rr5/RK1R4 w - - 0 1");
+                assertCheckmate();
+            }
+
+            @Test
+            @DisplayName("Checkmate; Knight Smothered Mate")
+            void CheckmateSmothered() {
+                board.FENSetup("5k2/8/8/8/8/8/5nPP/6RK w - - 0 1");
+                assertCheckmate();
+            }
+
+            @Test
+            @DisplayName("Checkmate; Bishop Knight")
+            void CheckmateBishopKnight() {
+                board.FENSetup("8/8/8/8/8/5bkn/8/7K w - - 0 1");
+                assertCheckmate();
+            }
+
+            @Test
+            @DisplayName("Checkmate; Double Bishop")
+            void CheckmateDoubleBishop() {
+                board.FENSetup("6k1/8/8/8/3b4/5b2/7P/7K w - - 0 1");
+                assertCheckmate();
+            }
+
+            @Test
+            @DisplayName("Checkmate; Bishop Rook")
+            void CheckmateBishopRook() {
+                board.FENSetup("4k3/8/8/8/3b4/8/7P/6rK w - - 0 1");
+                assertCheckmate();
+            }
+
+            @Test
+            @DisplayName("Checkmate; Knight Queen")
+            void CheckmateKnightQueen() {
+                board.FENSetup("3k4/8/8/8/5n2/8/6q1/6K1 w - - 0 1");
+                assertCheckmate();
+            }
+
+            @Test
+            @DisplayName("Checkmate; Triple Knight")
+            void CheckmateTripleKnight() {
+                board.FENSetup("8/8/8/7k/8/4nnn1/8/7K w - - 0 1");
+                assertCheckmate();
+            }
+
+            @Test
+            @DisplayName("Checkmate; Double Pawn")
+            void CheckmateDoublePawn() {
+                board.FENSetup("8/8/8/8/8/4k3/4pp2/4K3 w - - 0 1");
+                assertCheckmate();
+            }
+
+            @Test
+            @DisplayName("Checkmate; Pawn Queen")
+            void CheckmatePawnQueen() {
+                board.FENSetup("3k4/8/8/8/8/5p2/6q1/6K1 w - - 0 1");
+                assertCheckmate();
+            }
+
+            @Test
+            @DisplayName("Checkmate; King Queen")
+            void CheckmateKingQueen() {
+                board.FENSetup("8/8/8/8/8/5k2/6q1/6K1 w - - 0 1");
+                assertCheckmate();
+            }
+
+            @Test
+            @DisplayName("Checkmate; Block option pinned")
+            void CheckmateBlockPinned() {
+                board.FENSetup("rnb1k1n1/pppp1p2/6p1/3QpP2/4P1qb/1B6/PPPP2P1/RNBK2Nr w q - 0 1");
+                assertCheckmate();
+            }
+            @Test
+            @DisplayName("Checkmate; Double Check; Both can be captured")
+            void CheckmateDoubleCheck() {
+                board.FENSetup("rnb1kb1r/pppp1ppp/4p3/8/5P1q/3n1N2/PPPPP1PP/RNBQKB1R w KQkq - 0 1");
+                assertCheckmate();
+            }
+
+            @Test
+            @DisplayName("Checkmate; Double Check; One can be blocked")
+            void CheckmateDoubleCheck2() {
+                board.FENSetup("rnb1kb1r/pppp1ppp/4p3/8/7q/3n1P2/PPPPP1PP/RNBQKBNR w KQkq - 0 1");
+                assertCheckmate();
+            }
+
+            @Test
+            @DisplayName("Checkmate; Back rank")
+            void CheckmateBackRank() {
+                board.FENSetup("5k2/8/8/8/8/8/5PPP/r5K1 w - - 0 1");
+                assertCheckmate();
+            }
+
+            @Test
+            @DisplayName("Checkmate; Misc")
+            void CheckmateMisc() {
+                board.FENSetup("rn2k2r/ppp1pppp/3pbn2/4b3/3K1Pq1/2PPP3/PP4PP/RNBQ1BNR w kq - 0 1");
+                assertCheckmate();
+            }
+
+            @Test
+            @DisplayName("Checkmate; No Castling in Check")
+            void CheckmateMisc2() {
+                board.FENSetup("6k1/8/8/8/8/8/4PPPP/RNq1K2R w KQ - 0 1");
+                assertCheckmate();
+            }
+
+            @Test
+            @DisplayName("Checkmate; Anastasia's mate")
+            void CheckmateMisc3() {
+                board.FENSetup("1k6/8/8/8/7r/8/4nPPK/8 w - - 0 1");
+                assertCheckmate();
+            }
+        }
+
+        @Nested
+        @DisplayName("Multi King Test")
+        class MultiKingTest {
+
+        }
     }
 
     @Nested
@@ -502,5 +822,20 @@ public class ChessBoardTest {
 
     }
 
+    void assertEqualPieces(Piece piece1, Piece piece2) {
+        assertTrue((piece1.getName() == piece2.getName()) && (piece1.getColor() == piece2.getColor()));
+    }
+
+    void assertCheck() {
+        assertEquals(board.FindCheckStatus(), CHECK);
+    }
+
+    void assertCheckmate() {
+        assertEquals(board.FindCheckStatus(), CHECKMATE);
+    }
+
+    void assertNoCheck() {
+        assertEquals(board.FindCheckStatus(), NOT_IN_CHECK);
+    }
 
 }

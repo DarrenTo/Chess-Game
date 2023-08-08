@@ -94,7 +94,7 @@ public interface IChessBoard {
      *
      * If Checkmate the game should end
      */
-    CheckStatus FindCheck();
+    CheckStatus FindCheckStatus();
 
     /**
      * Moves a piece if valid
