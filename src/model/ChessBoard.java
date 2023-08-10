@@ -32,12 +32,10 @@ public class ChessBoard implements IChessBoard{
     private static final byte WHITE_QUEEN_CASTLE_MASK = 0b0100;
     private static final byte BLACK_KING_CASTLE_MASK = 0b0010;
     private static final byte BLACK_QUEEN_CASTLE_MASK = 0b0001;
+    private static final byte CASTLE_AVAIL = 0b1;
     private static final Pair<Integer, Integer> INVALID_TARGET = new Pair<>(-3,-3);
     private static final Pair<Integer, Integer> NO_TARGET = new Pair<>(-2,-2);
     private static final Pair<Integer, Integer> NO_CHECKS = new Pair<>(-4,-4);
-    private static final int EMPTY_SQUARE = -1;
-    private static final int NOT_IN_CHECK = -2;
-    private static final int IN_CHECK = -3;
 
     public ChessBoard() {
         chessBoard = new Piece[8][8];
@@ -83,7 +81,6 @@ public class ChessBoard implements IChessBoard{
         if(fullmoveNumber == -1) {
             return false;
         }
-
         if (IllegalKingCaptureCheck(activeColor, tempChessBoard)) {
             return false;
         }
@@ -140,7 +137,7 @@ public class ChessBoard implements IChessBoard{
                 } else {
                     return null;
                 }
-            } else if(type.matches("r|n|b|q|k|p|R|N|B|Q|K|P")) {
+            } else if(type.matches("[rnbqkpRNBQKP]")) {
                 if(type.matches("k")) {
                     if(!SingleBlackKing) {
                         SingleBlackKing = true;
@@ -153,7 +150,7 @@ public class ChessBoard implements IChessBoard{
                     } else {
                         return null;
                     }
-                } else if((line==0 || line==7)&&type.matches("p|P")) {
+                } else if((line==0 || line==7)&&type.matches("[pP]")) {
                     return null;
                 }
 
@@ -177,7 +174,7 @@ public class ChessBoard implements IChessBoard{
     }
 
     private Piece createPiece(String type) {
-        switch(type) {
+        switch (type) {
             case "p":
                 return new Pawn(BLACK);
             case "P":
@@ -227,25 +224,25 @@ public class ChessBoard implements IChessBoard{
 
             switch(type) {
                 case "K":
-                    if((WHITE_KING_CASTLE_MASK & castle) != 0b0) {
+                    if(((WHITE_KING_CASTLE_MASK & castle) >> 3) == CASTLE_AVAIL) {
                         return INVALID_CASTLE;
                     }
                     castle += 0b1000;
                     break;
                 case "Q":
-                    if((WHITE_QUEEN_CASTLE_MASK & castle) != 0b0) {
+                    if(((WHITE_QUEEN_CASTLE_MASK & castle) >> 2) == CASTLE_AVAIL) {
                         return INVALID_CASTLE;
                     }
                     castle += 0b0100;
                     break;
                 case "k":
-                    if((BLACK_KING_CASTLE_MASK & castle) != 0b0) {
+                    if(((BLACK_KING_CASTLE_MASK & castle) >> 1) == CASTLE_AVAIL) {
                         return INVALID_CASTLE;
                     }
                     castle += 0b0010;
                     break;
                 case "q":
-                    if((BLACK_QUEEN_CASTLE_MASK & castle) != 0b0) {
+                    if((BLACK_QUEEN_CASTLE_MASK & castle) == CASTLE_AVAIL) {
                         return INVALID_CASTLE;
                     }
                     castle += 0b0001;
@@ -346,46 +343,54 @@ public class ChessBoard implements IChessBoard{
     }
 
     private Pair<Integer, Integer> checkDir(Color attackColor, Pair<Integer, Integer> pos, Pair<Integer, Integer> dir, Piece[][] board) {
-        int x = pos.getKey();
-        int y = pos.getValue();
-        int status = 0;
-        while(status != NOT_IN_CHECK && status != IN_CHECK) {
+        int x = pos.getKey() + dir.getKey();
+        int y = pos.getValue() + dir.getValue();
+
+        while(x > -1 && x < 8 && y > - 1 && y < 8) {
+            Piece piece = getPositionStatus(x, y, board);
+            if(dir.getKey() == 0 || dir.getValue() == 0) {
+                if(isEqualPiece(attackColor, ROOK, piece) || isEqualPiece(attackColor, QUEEN, piece)) {
+                    return new Pair<>(x, y);
+                }
+            } else {
+                if(isEqualPiece(attackColor, BISHOP, piece) || isEqualPiece(attackColor, QUEEN, piece)) {
+                    return new Pair<>(x, y);
+                }
+            }
+            if(piece != null) {
+                return NO_CHECKS;
+            }
             x += dir.getKey();
             y += dir.getValue();
-            if(dir.getKey() == 0 || dir.getValue() == 0) {
-                status = hasXorQueen(attackColor, new Pair<>(x, y), ROOK, board);
-            } else {
-                status = hasXorQueen(attackColor, new Pair<>(x, y), BISHOP, board);
-            }
         }
 
-        if(status == NOT_IN_CHECK) {
-            return NO_CHECKS;
-        }
-
-        return new Pair<>(x, y);
+        return NO_CHECKS;
     }
 
     private Pair<Integer, Integer> checkKnightChecks(Color attackColor, Pair<Integer, Integer> pos, Piece[][] board) {
         int x = pos.getKey();
         int y = pos.getValue();
+        Pair<Integer, Integer> checkPos;
 
         for(KnightDirections dir : KnightDirections.values()) {
-            if(hasKnight(attackColor, new Pair<>(x + dir.dir.getKey(), y + dir.dir.getValue()), board)) {
-                return new Pair<>(x + dir.dir.getKey(), y + dir.dir.getValue());
+            checkPos = new Pair<>(x + dir.dir.getKey(), y + dir.dir.getValue());
+            if(containsPiece(attackColor, KNIGHT, checkPos.getKey(), checkPos.getValue(), board)) {
+                return checkPos;
             }
         }
-
         return NO_CHECKS;
     }
 
     private Pair<Integer, Integer> checkKingChecks(Color attackColor, Pair<Integer, Integer> pos, Piece[][] board) {
         int x = pos.getKey();
         int y = pos.getValue();
+        Pair<Integer, Integer> checkPos;
 
         for(Direction dir : Direction.values()) {
-            if(hasKing(attackColor, new Pair<>(x + dir.dir.getKey(), y + dir.dir.getValue()), board)) {
-                return new Pair<>(x + dir.dir.getKey(), y + dir.dir.getValue());
+            checkPos = new Pair<>(x + dir.dir.getKey(), y + dir.dir.getValue());
+
+            if(containsPiece(attackColor, KING, checkPos.getKey(), checkPos.getValue(), board)) {
+                return checkPos;
             }
         }
         return NO_CHECKS;
@@ -398,76 +403,46 @@ public class ChessBoard implements IChessBoard{
     private Pair<Integer, Integer> checkWhitePawnChecks(Color attackColor, Pair<Integer, Integer> pos, Piece[][] board) {
         int x = pos.getKey();
         int y = pos.getValue();
-        if(hasPawn(attackColor, new Pair<>(x - 1, y + 1), board)) {
+
+        if(containsPiece(attackColor, PAWN, x - 1, y + 1, board)) {
             return new Pair<>(x - 1, y + 1);
-        } else if(hasPawn(attackColor, new Pair<>(x + 1, y + 1), board)) {
+        } else if(containsPiece(attackColor, PAWN, x + 1, y + 1, board)) {
             return new Pair<>(x + 1, y + 1);
         }
+
         return NO_CHECKS;
     }
 
     private Pair<Integer, Integer> checkBlackPawnChecks(Color attackColor, Pair<Integer, Integer> pos, Piece[][] board) {
         int x = pos.getKey();
         int y = pos.getValue();
-        if(hasPawn(attackColor, new Pair<>(x - 1, y - 1), board)) {
+
+        if(containsPiece(attackColor, PAWN, x - 1, y - 1, board)) {
             return new Pair<>(x - 1, y - 1);
-        } else if(hasPawn(attackColor, new Pair<>(x + 1, y - 1), board)) {
+        } else if(containsPiece(attackColor, PAWN, x + 1, y - 1, board)) {
             return new Pair<>(x + 1, y - 1);
         }
+
         return NO_CHECKS;
     }
 
-    private boolean hasKnight(Color attackColor, Pair<Integer, Integer> pos, Piece[][] board) {
-        if(pos.getKey() < 0 || pos.getKey() > 7 || pos.getValue() < 0 || pos.getValue() > 7) {
-            return false;
-        }
-            Piece piece = getPositionStatus(pos.getKey(), pos.getValue(), board);
-            return piece != null && (piece.getName() == KNIGHT && piece.getColor() == attackColor);
+    private boolean isEqualPiece(Color attackColor, PieceName name, Piece piece) {
+        return piece != null && piece.getName() == name && piece.getColor() == attackColor;
     }
 
-    private int hasXorQueen(Color attackColor, Pair<Integer, Integer> pos, PieceName x, Piece[][] board) {
-        if(pos.getKey() < 0 || pos.getKey() > 7 || pos.getValue() < 0 || pos.getValue() > 7) {
-            return NOT_IN_CHECK;
-        }
-        Piece piece = getPositionStatus(pos.getKey(), pos.getValue(), board);
-        if(piece == null) {
-            return EMPTY_SQUARE;
-        }
-        if(piece.getColor() == attackColor && (piece.getName() == x || piece.getName() == QUEEN)) {
-            return IN_CHECK;
-        }
-        return NOT_IN_CHECK;
-    }
-
-    private boolean hasPawn(Color attackColor, Pair<Integer, Integer> pos,  Piece[][] board) {
-        if(pos.getKey() < 0 || pos.getKey() > 7 || pos.getValue() < 0 || pos.getValue() > 7) {
+    private boolean containsPiece(Color attackColor, PieceName name, int x, int y, Piece[][] board) {
+        if(x < 0 || y < 0 || x > 7 || y > 7) {
             return false;
         }
-        Piece piece = getPositionStatus(pos.getKey(), pos.getValue(), board);
-        return piece != null && (piece.getName() == PAWN && piece.getColor() == attackColor);
-    }
-
-    private boolean hasKing(Color attackColor, Pair<Integer, Integer> pos, Piece[][] board) {
-        if(pos.getKey() < 0 || pos.getKey() > 7 || pos.getValue() < 0 || pos.getValue() > 7) {
-            return false;
-        }
-        Piece piece = getPositionStatus(pos.getKey(), pos.getValue(), board);
-        return piece != null && (piece.getName() == KING && piece.getColor() == attackColor);
+        Piece piece = getPositionStatus(x, y, board);
+        return isEqualPiece(attackColor, name, piece);
     }
 
     private void CastlingSetter(byte castle) {
-        if((WHITE_KING_CASTLE_MASK & castle) != 0b0) {
-            this.whiteKingSideCastle = true;
-        }
-        if((WHITE_QUEEN_CASTLE_MASK & castle) != 0b0) {
-            this.whiteQueenSideCastle = true;
-        }
-        if((BLACK_KING_CASTLE_MASK & castle) != 0b0) {
-            this.blackKingSideCastle = true;
-        }
-        if((BLACK_QUEEN_CASTLE_MASK & castle) != 0b0) {
-            this.blackQueenSideCastle = true;
-        }
+        this.whiteKingSideCastle = ((WHITE_KING_CASTLE_MASK & castle) >> 3) == CASTLE_AVAIL;
+        this.whiteQueenSideCastle = ((WHITE_QUEEN_CASTLE_MASK & castle) >> 2) == CASTLE_AVAIL;
+        this.blackKingSideCastle = ((BLACK_KING_CASTLE_MASK & castle) >> 1) == CASTLE_AVAIL;
+        this.blackQueenSideCastle = (BLACK_QUEEN_CASTLE_MASK & castle) == CASTLE_AVAIL;
     }
 
     private void KingPosSetter() {
@@ -479,25 +454,29 @@ public class ChessBoard implements IChessBoard{
     }
 
     private void AddKing(Piece piece, int x, int y) {
-        if(piece != null) {
-            if(piece.getName() == KING) {
-                if(piece.getColor() == WHITE) {
-//                    whiteKingPos.add(new Pair<>(x, y));
-                    this.whiteKingPos = new Pair<>(x, y);
-                } else {
-//                    blackKingPos.add(new Pair<>(x, y));
-                    this.blackKingPos = new Pair<>(x, y);
-                }
+        if (piece != null && piece.getName() == KING) {
+            if (piece.getColor() == WHITE) {
+//              whiteKingPos.add(new Pair<>(x, y));
+                this.whiteKingPos = new Pair<>(x, y);
+            } else {
+//              blackKingPos.add(new Pair<>(x, y));
+                this.blackKingPos = new Pair<>(x, y);
             }
         }
     }
 
     @Override
     public Piece getPositionStatus(int x, int y) {
+        if(x < 0 || x > 7 || y < 0 || y > 7) {
+            return null;
+        }
         return chessBoard[y][x];
     }
 
     private Piece getPositionStatus(int x, int y, Piece[][] board) {
+        if(x < 0 || x > 7 || y < 0 || y > 7) {
+            return null;
+        }
         return board[y][x];
     }
 
@@ -521,22 +500,22 @@ public class ChessBoard implements IChessBoard{
         return CheckStatus.NOT_IN_CHECK;
     }
 
-    private CheckStatus FindCheckMulti(List<Pair<Integer, Integer>> kingPos) {
-        return CheckStatus.NOT_IN_CHECK;
-    }
+//    private CheckStatus FindCheckMulti(List<Pair<Integer, Integer>> kingPos) {
+//        return CheckStatus.NOT_IN_CHECK;
+//    }
 
     private boolean HasKingMoves(Pair<Integer, Integer> pos, Color attackColor) {
         int x = pos.getKey();
         int y = pos.getValue();
 
-        return (x > 0 && InCheck(attackColor, new Pair<>(x - 1, y), Move(x, y, x - 1, y)) == NO_CHECKS && getPositionStatus(x - 1, y) == null) ||
-                (x > 0 && y > 0 && InCheck(attackColor, new Pair<>(x - 1, y - 1), Move(x, y, x - 1, y - 1)) == NO_CHECKS && getPositionStatus(x - 1, y - 1) == null) ||
-                (y > 0 && InCheck(attackColor, new Pair<>(x, y - 1), Move(x, y, x, y - 1)) == NO_CHECKS && getPositionStatus(x, y - 1) == null) ||
-                (x < 7 && y > 0 && InCheck(attackColor, new Pair<>(x + 1, y - 1), Move(x, y, x + 1, y - 1)) == NO_CHECKS && getPositionStatus(x + 1, y - 1) == null) ||
-                (x < 7 && InCheck(attackColor, new Pair<>(x + 1, y), Move(x, y, x + 1, y)) == NO_CHECKS && getPositionStatus(x + 1, y) == null) ||
-                (x < 7 && y < 7 && InCheck(attackColor, new Pair<>(x + 1, y + 1), Move(x, y, x + 1, y + 1)) == NO_CHECKS && getPositionStatus(x + 1, y + 1) == null) ||
-                (y < 7 && InCheck(attackColor, new Pair<>(x, y + 1), Move(x, y, x, y + 1)) == NO_CHECKS && getPositionStatus(x, y + 1) == null) ||
-                (x > 0 && y < 7 && InCheck(attackColor, new Pair<>(x - 1, y + 1), Move(x, y, x - 1, y + 1)) == NO_CHECKS && getPositionStatus(x - 1, y + 1) == null);
+        for(Direction dir: Direction.values()) {
+            int endX = x + dir.dir.getKey();
+            int endY = y + dir.dir.getValue();
+            if(IsValidMove(x, y, endX, endY, attackColor, new Pair<>(endX, endY))) {
+                return true;
+            }
+        }
+        return false;
     }
 
     private Piece[][] Move(int initX, int initY, int endX, int endY) {
@@ -548,11 +527,21 @@ public class ChessBoard implements IChessBoard{
         return board;
     }
 
+    private boolean IsValidMove(int initX, int initY, int endX, int endY, Color attackColor, Pair<Integer, Integer> pos) {
+        if(initX < 0 || initY < 0 || endX < 0 || endY < 0 || initX > 7 || initY > 7 || endX > 7 || endY > 7) {
+            return false;
+        }
+        Piece[][] board = Move(initX, initY, endX, endY);
+        Piece piece = getPositionStatus(endX, endY);
+        if(piece != null && piece.getColor() != attackColor) {
+            return false;
+        }
+        return InCheck(attackColor, pos, board) == NO_CHECKS;
+    }
+
     private void CopyBoard(Piece[][] src, Piece[][] dst) {
         for(int i = 0; i < 8; i++) {
-            for(int j = 0; j < 8; j++) {
-                dst[i][j] = src[i][j];
-            }
+            System.arraycopy(src[i], 0, dst[i], 0, 8);
         }
     }
 
@@ -562,7 +551,8 @@ public class ChessBoard implements IChessBoard{
         for(Direction dir : Direction.values()) {
             checkPos = checkDir(attackColor, pos, dir.dir, this.chessBoard);
             if((checkPos != NO_CHECKS)) {
-                if((FindValidBlockMoves(attackColor, pos, dir.dir, checkPos) || FindValidCaptureMoves(attackColor, pos, checkPos))) {
+                if((FindValidBlockMoves(attackColor, pos, dir.dir, checkPos) ||
+                        FindValidCaptureMoves(attackColor, pos, checkPos))) {
                     if(!canBlock) {
                             return false;
                     }
@@ -573,11 +563,12 @@ public class ChessBoard implements IChessBoard{
                 }
             }
 
+        for(KnightDirections knightDir : KnightDirections.values()) {
+            int knightPosX = pos.getKey() + knightDir.dir.getKey();
+            int knightPosY = pos.getValue() + knightDir.dir.getValue();
 
-
-        for(KnightDirections knightdir : KnightDirections.values()) {
-            if (hasKnight(attackColor, new Pair<>(pos.getKey() + knightdir.dir.getKey(), pos.getValue() + knightdir.dir.getValue()), this.chessBoard)) {
-                if(FindValidCaptureMoves(attackColor, pos, new Pair<>(pos.getKey() + knightdir.dir.getKey(), pos.getValue() + knightdir.dir.getValue()))) {
+            if(containsPiece(attackColor, KNIGHT, knightPosX, knightPosY, this.chessBoard)) {
+                if(FindValidCaptureMoves(attackColor, pos, new Pair<>(knightPosX, knightPosY))) {
                     if (!canBlock) {
                         return false;
                     }
@@ -589,16 +580,10 @@ public class ChessBoard implements IChessBoard{
         }
 
         checkPos = checkPawnChecks(attackColor, pos, this.chessBoard);
-        if(checkPos != NO_CHECKS) {
-            if(FindValidCaptureMoves(attackColor, pos, checkPos)) {
-                if(!canBlock) {
-                    return false;
-                }
-                canBlock = false;
-            } else {
-                return false;
-            }
+        if(checkPos != NO_CHECKS && !(FindValidCaptureMoves(attackColor, pos, checkPos) && canBlock)) {
+            return false;
         }
+
         return true;
     }
 
@@ -611,54 +596,49 @@ public class ChessBoard implements IChessBoard{
             for(Direction direct : Direction.values()) {
                 check = checkDir(activeColor, new Pair<>(x, y), direct.dir, this.chessBoard);
                 if(check != NO_CHECKS) {
-                    Piece[][] board = Move(check.getKey(), check.getValue(), x, y);
-                    if(InCheck(attackColor, pos, board) == NO_CHECKS) {
+                    if(IsValidMove(check.getKey(), check.getValue(), x, y, attackColor, pos)) {
                         return true;
                     }
                 }
             }
 
-            for(KnightDirections knightdir : KnightDirections.values()) {
-                if(hasKnight(activeColor, new Pair<>(x + knightdir.dir.getKey(), y + knightdir.dir.getValue()), this.chessBoard)) {
-                    Piece[][] board = Move(x + knightdir.dir.getKey(), y + knightdir.dir.getValue(), x, y);
-                    if(InCheck(attackColor, pos, board) == NO_CHECKS) {
+                for(KnightDirections knightDir : KnightDirections.values()) {
+                    int knightPosX = checkPos.getKey() + knightDir.dir.getKey();
+                    int knightPosY = checkPos.getValue() + knightDir.dir.getValue();
+                    if (containsPiece(attackColor, KNIGHT, knightPosX, knightPosY, this.chessBoard) &&
+                            IsValidMove(knightPosX, knightPosY, x, y, attackColor, pos)) {
                         return true;
                     }
                 }
+                x += dir.getKey();
+                y += dir.getValue();
             }
-            x += dir.getKey();
-            y += dir.getValue();
+            return false;
         }
-        return false;
-    }
 
     private boolean FindValidCaptureMoves(Color attackColor, Pair<Integer, Integer> pos, Pair<Integer, Integer> checkPos) {
         Pair<Integer, Integer> check;
         for(Direction direct : Direction.values()) {
-            check = checkDir(activeColor, new Pair<>(checkPos.getKey(), checkPos.getValue()), direct.dir, this.chessBoard);
-            if(check != NO_CHECKS) {
-                Piece[][] board = Move(check.getKey(), check.getValue(), checkPos.getKey(), checkPos.getValue());
-                if(InCheck(attackColor, pos, board) == NO_CHECKS) {
+            check = checkDir(activeColor, checkPos, direct.dir, this.chessBoard);
+            if(check != NO_CHECKS && getPositionStatus(check.getKey(), check.getValue(), this.chessBoard).getName() != KING) {
+                if(IsValidMove(check.getKey(), check.getValue(), checkPos.getKey(), checkPos.getValue(), attackColor, pos)) {
                     return true;
                 }
             }
         }
 
-        for(KnightDirections knightdir : KnightDirections.values()) {
-            if(hasKnight(activeColor, new Pair<>(checkPos.getKey() + knightdir.dir.getKey(), checkPos.getValue() + knightdir.dir.getValue()), this.chessBoard)) {
-                Piece[][] board = Move(checkPos.getKey() + knightdir.dir.getKey(), checkPos.getValue() + knightdir.dir.getValue(), checkPos.getKey(), checkPos.getValue());
-                if(InCheck(attackColor, pos, board) == NO_CHECKS) {
-                    return true;
-                }
-            }
-        }
-
-        check = checkPawnChecks(activeColor, new Pair<>(checkPos.getKey(), checkPos.getValue()), this.chessBoard);
-        if(check != NO_CHECKS) {
-            Piece[][] board = Move(check.getKey(), check.getValue(), checkPos.getKey(), checkPos.getValue());
-            if(InCheck(attackColor, pos, board) == NO_CHECKS) {
+        for(KnightDirections knightDir : KnightDirections.values()) {
+            int knightPosX = checkPos.getKey() + knightDir.dir.getKey();
+            int knightPosY = checkPos.getValue() + knightDir.dir.getValue();
+            if(containsPiece(activeColor, KNIGHT, knightPosX, knightPosY, this.chessBoard) &&
+                    IsValidMove(knightPosX, knightPosY, checkPos.getKey(), checkPos.getValue(), attackColor, pos)) {
                 return true;
             }
+        }
+
+        check = checkPawnChecks(activeColor, checkPos, this.chessBoard);
+        if(check != NO_CHECKS) {
+            return IsValidMove(check.getKey(), check.getValue(), checkPos.getKey(), checkPos.getValue(), attackColor, pos);
         }
 
         return false;

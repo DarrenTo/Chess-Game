@@ -453,6 +453,18 @@ public class ChessBoardTest {
             }
 
             @Test
+            @DisplayName("Invalid Kings beside each other")
+            void InvalidMisc14() {
+                assertFalse(board.FENSetup("rnbq1bnr/pppppppp/8/3k4/4K3/8/PPPPPPPP/RNBQ1BNR w - - 0 1"));
+            }
+
+            @Test
+            @DisplayName("Invalid Kings beside each other")
+            void InvalidMisc15() {
+                assertFalse(board.FENSetup("rnbq1bnr/pppppppp/8/3k4/4K3/8/PPPPPPPP/RNBQ1BNR b - - 0 1"));
+            }
+
+            @Test
             @DisplayName("Valid black first move king in check; pawn")
             void ValidMisc5() {
                 assertTrue(board.FENSetup("rnbqkbnr/pppppPpp/8/8/8/8/PPPPP1PP/RNBQKBNR b KQkq - 0 1"));
