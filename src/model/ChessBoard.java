@@ -646,6 +646,51 @@ public class ChessBoard implements IChessBoard{
 
     @Override
     public boolean MovePiece(int initX, int initY, int endX, int endY) {
+        Piece piece = getPositionStatus(initX, initY);
+        CheckStatus status = FindCheckStatus();
+        if(piece == null || piece.getColor() != activeColor || status == CheckStatus.CHECKMATE) {
+            return false;
+        }
+
+        switch(piece.getName()) {
+            case KING:
+                return KingMove(initX, initY, endX, endY, status);
+            case QUEEN:
+                return QueenMove(initX, initY, endX, endY, status);
+            case BISHOP:
+                return BishopMove(initX, initY, endX, endY, status);
+            case KNIGHT:
+                return KnightMove(initX, initY, endX, endY, status);
+            case ROOK:
+                return RookMove(initX, initY, endX, endY, status);
+            case PAWN:
+                return PawnMove(initX, initY, endX, endY, status);
+            default:
+                return false;
+        }
+    }
+
+    public boolean KingMove(int initX, int initY, int endX, int endY, CheckStatus status) {
+        return false;
+    }
+
+    public boolean QueenMove(int initX, int initY, int endX, int endY, CheckStatus status) {
+        return false;
+    }
+
+    public boolean BishopMove(int initX, int initY, int endX, int endY, CheckStatus status) {
+        return false;
+    }
+
+    public boolean KnightMove(int initX, int initY, int endX, int endY, CheckStatus status) {
+        return false;
+    }
+
+    public boolean RookMove(int initX, int initY, int endX, int endY, CheckStatus status) {
+        return false;
+    }
+
+    public boolean PawnMove(int initX, int initY, int endX, int endY, CheckStatus status) {
         return false;
     }
 

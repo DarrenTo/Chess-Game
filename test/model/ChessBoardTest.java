@@ -832,10 +832,436 @@ public class ChessBoardTest {
     @DisplayName("MovePiece")
     class MovePieceTest {
 
+        @Test
+        @DisplayName("Null space")
+        void NullSpace() {
+            board.FENSetup("rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1");
+            assertFalse(board.MovePiece(0,4,0,5));
+        }
+
+        @Test
+        @DisplayName("Wrong Color")
+        void WrongColor() {
+            board.FENSetup("rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1");
+            assertFalse(board.MovePiece(0,1, 0,2));
+        }
+
+        @Test
+        @DisplayName("Valid Pawn Move")
+        void PawnMove() {
+            board.FENSetup("rnbqkbnr/pppp1ppp/8/4p3/8/4P3/PPPP1PPP/RNBQKBNR w KQkq - 0 1");
+            assertValidMove(4, 5, 4, 4);
+        }
+
+        @Test
+        @DisplayName("Valid Double Pawn Move")
+        void PawnMove2() {
+            board.FENSetup("rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1");
+            assertValidMove(1,6,1,4);
+        }
+
+        @Test
+        @DisplayName("Valid Pawn Capture; Left")
+        void PawnCapture() {
+            board.FENSetup("rnbqkbnr/ppp1pppp/8/3p4/4P3/8/PPPP1PPP/RNBQKBNR w KQkq - 0 1");
+            assertValidMove(4, 4, 3, 3);
+        }
+
+        @Test
+        @DisplayName("Valid Pawn Capture; Right")
+        void PawnCapture2() {
+            board.FENSetup("rnbqkbnr/pppp1ppp/8/4p3/3P4/8/PPP1PPPP/RNBQKBNR w KQkq - 0 1");
+            assertValidMove(3, 4, 4, 3);
+        }
+
+        @Test
+        @DisplayName("Valid En Passant; Right")
+        void PawnEnPassant() {
+            board.FENSetup("rnbqkbnr/pppp1ppp/8/3Pp3/8/8/PPP1PPPP/RNBQKBNR w KQkq e6 0 1");
+            assertValidMove(3, 3, 4, 2);
+        }
+
+        @Test
+        @DisplayName("Valid En Passant; Left")
+        void PawnEnPassant2() {
+            board.FENSetup("rnbqkbnr/ppp1pppp/8/3pP3/8/8/PPPP1PPP/RNBQKBNR w KQkq d6 0 1");
+            assertValidMove(4, 3, 3, 2);
+        }
+
+        @Test
+        @DisplayName("Invalid Pawn Move")
+        void InvalidPawnMove() {
+            board.FENSetup("rnbqkbnr/pppp1ppp/8/4p3/4P3/8/PPPP1PPP/RNBQKBNR w KQkq - 0 1");
+            assertFalse(board.MovePiece(4, 4, 4, 3));
+        }
+
+        @Test
+        @DisplayName("Invalid Double Pawn Move")
+        void InvalidPawnMove2() {
+            board.FENSetup("rnbqkbnr/pppppppp/8/8/8/4P3/PPPP1PPP/RNBQKBNR w KQkq - 0 1");
+            assertFalse(board.MovePiece(4, 5, 4, 3));
+        }
+
+        @Test
+        @DisplayName("Invalid Double Pawn Move")
+        void InvalidPawnMove3() {
+            board.FENSetup("rnbqkbnr/pppp1ppp/8/8/3Pp3/2N5/PPP1PPPP/R1BQKBNR w KQkq - 0 1");
+            assertFalse(board.MovePiece(4, 6, 4, 4));
+        }
+
+        @Test
+        @DisplayName("Invalid Pawn Capture")
+        void InvalidPawnMove4() {
+            board.FENSetup("rnb1kbnr/ppp1pppp/4q3/3p4/4P3/5N2/PPPP1PPP/RNBQKB1R w KQkq - 0 1");
+            assertFalse(board.MovePiece(4, 4, 3, 3));
+        }
+
+        @Test
+        @DisplayName("Invalid En Passant")
+        void InvalidPawnMove5() {
+            board.FENSetup("rnbqkbnr/ppp1pppp/8/3p4/4P3/8/PPPP1PPP/RNBQKBNR w KQkq - 0 1");
+            assertTrue(board.MovePiece(4, 4, 4, 5));
+            assertTrue(board.MovePiece(2, 1, 2, 3));
+            assertFalse(board.MovePiece(4, 3, 3, 2));
+        }
+
+        @Test
+        @DisplayName("Invalid Pawn Move")
+        void InvalidPawnMove6() {
+            board.FENSetup("rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1");
+            assertFalse(board.MovePiece(0, 6, 1, 5));
+        }
+
+        @Test
+        @DisplayName("Invalid Pawn Move")
+        void InvalidPawnMove7() {
+            board.FENSetup("rnbqkbnr/pppppppp/8/8/4P3/8/PPPP1PPP/RNBQKBNR w KQkq - 0 1");
+            assertFalse(board.MovePiece(4, 4, 4, 5));
+        }
+
+        @Test
+        @DisplayName("Valid Pawn Move; Black")
+        void BlackPawnMove() {
+            board.FENSetup("rnbqkbnr/pppppppp/8/8/4P3/8/PPPP1PPP/RNBQKBNR b KQkq - 0 1");
+            assertValidMove(0, 1, 0, 2);
+        }
+
+        @Test
+        @DisplayName("Valid Pawn Double Move; Black")
+        void BlackPawnMove2() {
+            board.FENSetup("rnbqkbnr/pppppppp/8/8/4P3/8/PPPP1PPP/RNBQKBNR b KQkq - 0 1");
+            assertValidMove(0, 1, 0, 3);
+        }
+
+        @Test
+        @DisplayName("Valid Pawn En Passant; Black")
+        void BlackPawnMove3 () {
+            board.FENSetup("rnbqkbnr/ppp1pppp/8/8/3pP3/8/PPPP1PPP/RNBQKBNR b KQkq e3 0 1");
+            assertValidMove(3, 4, 4, 5);
+        }
+
+        @Test
+        @DisplayName("Invalid Pawn Move; Black")
+        void InvalidBlackPawnMove() {
+            board.FENSetup("rnbqkbnr/pppp1ppp/8/4p3/4P3/8/PPPP1PPP/RNBQKBNR b KQkq - 0 1");
+            assertFalse(board.MovePiece(4, 3, 4, 4));
+        }
+
+        @Test
+        @DisplayName("Invalid Pawn Capture; Black")
+        void InvalidBlackPawnCapture() {
+            board.FENSetup("rnbqkbnr/pppp1ppp/8/4p3/3P4/4Q3/PPP1PPPP/RNB1KBNR b KQkq - 0 1");
+            assertFalse(board.MovePiece(4, 3, 3, 4));
+        }
+
+        @Test
+        @DisplayName("Valid Rook Move")
+        void RookMove() {
+            board.FENSetup("rrnbqkbnr/ppppppp1/8/7p/P7/8/1PPPPPPP/RNBQKBNR w KQkq - 0 1");
+            assertValidMove(0,7, 0, 5);
+            assertValidMove(7,0,7,2);
+            assertValidMove(0,5,3,5);
+            assertValidMove(7,2,5,2);
+        }
+
+        @Test
+        @DisplayName("Valid Rook Capture")
+        void RookCapture() {
+            board.FENSetup("rnbqkbnr/1pppppp1/8/p7/7P/8/1PPPPPP1/RNBQKBNR w Kkq - 0 1");
+            assertValidMove(0,7,0,3);
+            assertValidMove(7,0,7,4);
+        }
+
+        @Test
+        @DisplayName("Invalid Rook Move")
+        void InvalidRookMove() {
+            board.FENSetup("rnbqkbn1/ppp1ppp1/3p3r/7p/P7/R3P3/1PPP1PPP/1NBQKBNR w Kq - 0 1");
+            assertFalse(board.MovePiece(0,5, 0,4));
+            assertFalse(board.MovePiece(0,5, 0,3));
+            assertFalse(board.MovePiece(0,5, 4,5));
+            assertFalse(board.MovePiece(0,5, 5,5));
+            assertFalse(board.MovePiece(0,5,2,3));
+            assertValidMove(0,5,0,7);
+            assertFalse(board.MovePiece(7, 2, 7, 3));
+            assertFalse(board.MovePiece(7, 2, 7, 4));
+            assertFalse(board.MovePiece(7,2,3,2));
+            assertFalse(board.MovePiece(7,2,2,2));
+        }
+
+        @Test
+        @DisplayName("Invalid Rook Capture")
+        void InvalidRookCapture() {
+            board.FENSetup("rnb1k3/ppp1pppp/4q3/N2r4/4R2n/3Q4/1PPP1PPP/2B1KBNR w Kq - 0 1");
+            assertFalse(board.MovePiece(4,4,7,4));
+            assertValidMove(4, 4, 4, 2);
+            assertFalse(board.MovePiece(3, 3, 0, 3));
+            assertValidMove(3, 3, 3, 5);
+        }
+
+        @Test
+        @DisplayName("Invalid Rook Capture")
+        void InvalidRookCapture2() {
+            board.FENSetup("rnbqk1n1/pppr1ppp/4p3/1B6/1b6/4P3/PPPR1PPP/1NBQK1NR w Kq - 0 1");
+            assertFalse(board.MovePiece(3, 6, 3, 5));
+            assertValidMove(2, 6, 2, 5);
+            assertFalse(board.MovePiece(3,1,3,2));
+            assertValidMove(2,1,2,2);
+        }
+
+        @Test
+        @DisplayName("Valid Knight Move")
+        void ValidKnightMove() {
+            board.FENSetup("rnbqkbnr/p1pppppp/8/1p6/6P1/8/PPPPPP1P/RNBQKBNR w KQkq - 0 1");
+            assertValidMove(1,7,2,5);
+            assertValidMove(6, 0, 5, 2);
+            assertValidMove(2,5,1,3);
+            assertValidMove(5,2,6,4);
+        }
+
+        @Test
+        @DisplayName("Invalid Knight Move")
+        void InvalidKnightMove() {
+            board.FENSetup("r1bqk1nr/1ppn1ppp/p2p4/1B2p3/1b2P3/P2P4/1PPN1PPP/R1BQK1NR w KQkq - 0 1");
+            assertFalse(board.MovePiece(3,6,5,5));
+            assertValidMove(0,5,1,4);
+            assertFalse(board.MovePiece(3,1,5,2));
+            assertValidMove(0,2, 1,3);
+            assertFalse(board.MovePiece(3,6,4,4));
+            assertValidMove(3, 6, 1, 5);
+            assertFalse(board.MovePiece(3,1, 4,3));
+            assertValidMove(3, 1, 1, 2);
+        }
+
+        @Test
+        @DisplayName("Valid Bishop Move")
+        void ValidBishopMove() {
+            board.FENSetup("rnbqkbnr/ppp1pppp/3p4/8/8/4P3/PPPP1PPP/RNBQKBNR w KQkq - 0 1");
+            assertValidMove(5, 7, 3, 5);
+            assertValidMove(2, 0, 4, 2);
+            assertValidMove(3, 5, 7, 1);
+            assertValidMove(4, 2, 0,6);
+        }
+
+        @Test
+        @DisplayName("Invalid Bishop Move")
+        void InvalidBishopMove() {
+            board.FENSetup("rn1k1bnr/p2bpppp/4q3/1p3P2/2p3P1/3Q4/PPPPB2P/RNB1K1NR w KQ - 0 1");
+            assertFalse(board.MovePiece(4, 6, 5, 5));
+            assertValidMove(5, 3,4,2);
+            assertFalse(board.MovePiece(3, 1, 2, 2));
+            assertValidMove(2, 4, 3, 5);
+            assertFalse(board.MovePiece(4, 6, 1, 3));
+            assertFalse(board.MovePiece(4, 6, 4, 4));
+            assertFalse(board.MovePiece(4, 6, 6, 4));
+            assertFalse(board.MovePiece(4, 6, 7, 3));
+            assertValidMove(4, 6, 3, 7);
+            assertFalse(board.MovePiece(3, 1, 6, 4));
+            assertFalse(board.MovePiece(3, 1, 3, 3));
+            assertFalse(board.MovePiece(3, 1, 1, 3));
+            assertFalse(board.MovePiece(3, 1, 0, 4));
+            assertValidMove(3, 1, 4, 0);
+        }
+
+        @Test
+        @DisplayName("Valid Queen Move")
+        void ValidQueenMove() {
+            board.FENSetup("rnbqkbnr/pp1ppppp/2p5/8/8/4P3/PPPP1PPP/RNBQKBNR w KQkq - 0 1");
+            assertValidMove(3,7,7,3);
+            assertValidMove(3, 0, 0, 3);
+            assertValidMove(7,3,7,1);
+            assertValidMove(0,3,0,6);
+        }
+
+        @Test
+        @DisplayName("Invalid Queen Move")
+        void InValidQueenMove() {
+            board.FENSetup("1nbk1bnr/p3pppp/1p1qr3/5P2/P1p5/3RQ1P1/1PPP3P/1NB1KBNR w K - 0 1");
+            assertFalse(board.MovePiece(4, 5, 5, 5));
+            assertValidMove(5, 3, 4, 2);
+            assertFalse(board.MovePiece(3, 2, 2, 2));
+            assertValidMove(2, 4, 3, 5);
+            assertFalse(board.MovePiece(4, 5, 4, 2));
+            assertFalse(board.MovePiece(4, 5, 4, 1));
+            assertFalse(board.MovePiece(4, 5, 0, 1));
+            assertFalse(board.MovePiece(4, 5, 3, 3));
+            assertValidMove(4, 5, 3, 5);
+            assertFalse(board.MovePiece(3, 2, 3, 5));
+            assertFalse(board.MovePiece(3, 2, 3, 6));
+            assertFalse(board.MovePiece(3, 2, 7, 6));
+            assertFalse(board.MovePiece(3, 2, 4, 4));
+            assertValidMove(3, 2, 4, 2);
+        }
+
+        @Test
+        @DisplayName("Valid King Move")
+        void ValidKingMove() {
+            board.FENSetup("rnb2bnr/ppppkppp/8/2P5/4p3/3P4/PP1KPPPP/RNB2BNR w - - 0 1");
+            assertValidMove(3,6,4,5);
+            assertValidMove(4,1,3,2);
+            assertValidMove(4,5,4,4);
+            assertValidMove(4,1,2,3);
+        }
+
+        @Test
+        @DisplayName("Invalid King Move")
+        void InvalidKingMove() {
+            board.FENSetup("r3k2r/ppp2ppp/3pp3/1b4B1/8/4P3/PPPP1PPP/R3K2R w - - 0 1");
+            assertFalse(board.MovePiece(4,7,4,6));
+            assertValidMove(3,6,3,5);
+            assertFalse(board.MovePiece(4,0,4,1));
+            assertValidMove(5,2,5,3);
+            assertFalse(board.MovePiece(4,7,6, 7));
+            assertFalse(board.MovePiece(4,7,2,7));
+            assertValidMove(4,7,5,7);
+            assertFalse(board.MovePiece(4,0,6,0));
+            assertFalse(board.MovePiece(4,0,2,0));
+            assertValidMove(4,0,5,0);
+        }
+
+        @Test
+        @DisplayName("Kingside Castle")
+        void KingSideCastle() {
+            board.FENSetup("r3k2r/ppp1pppp/3p4/1b4B1/8/8/PPPPPPPP/R3K2R w KQkq - 0 1");
+            assertValidMove(4,7,6,7);
+            assertEqualPieces(board.getPositionStatus(5,7),new Rook(WHITE));
+            assertValidMove(4,0,6,0);
+            assertEqualPieces(board.getPositionStatus(5,0),new Rook(BLACK));
+        }
+
+        @Test
+        @DisplayName("Queenside Castle")
+        void QueenSideCastle() {
+            board.FENSetup("r3k2r/ppp1pppp/3p4/1b4B1/8/8/PPPPPPPP/R3K2R w KQkq - 0 1");
+            assertValidMove(4,7,2,7);
+            assertEqualPieces(board.getPositionStatus(3,7),new Rook(WHITE));
+            assertValidMove(4,0,2,0);
+            assertEqualPieces(board.getPositionStatus(3,0),new Rook(BLACK));
+        }
+
+        @Test
+        @DisplayName("Invalid castling through pieces")
+        void InvalidCastle() {
+            board.FENSetup("r1n1kn1r/ppp1pppp/3p4/1b4B1/8/8/PPPPPPPP/RN2K1NR w KQkq - 0 1");
+            assertFalse(board.MovePiece(4,7,6,7));
+            assertFalse(board.MovePiece(4,7,2,7));
+            assertValidMove(4,7,5,7);
+            assertFalse(board.MovePiece(4,0,6,0));
+            assertFalse(board.MovePiece(4,0,2,0));
+            assertValidMove(4,0,5,0);
+        }
+
+        @Test
+        @DisplayName("Invalid castling through check")
+        void InvalidCastle2() {
+            board.FENSetup("r3k2r/p2pp2p/8/2Q2Q2/2q2q2/8/P2PP2P/R3K2R w KQkq - 0 1");
+            assertFalse(board.MovePiece(4,7,6,7));
+            assertFalse(board.MovePiece(4,7,2,7));
+            assertValidMove(7,6,7,5);
+            assertFalse(board.MovePiece(4,0,6,0));
+            assertFalse(board.MovePiece(4,0,2,0));
+            assertValidMove(7,1,7,2);
+
+            assertValidMove(5,3,6,3);
+            assertValidMove(5,4,6,4);
+            assertValidMove(2,3,1,3);
+            assertValidMove(2,4,1,4);
+
+            assertFalse(board.MovePiece(4,7,6,7));
+            assertValidMove(4,7,3,7);
+            assertFalse(board.MovePiece(4,0,6,0));
+            assertValidMove(4,0,2,0);
+
+            board.FENSetup("r3k2r/p2ppp2/8/7Q/7q/8/P2PPP2/R3K2R w KQkq - 0 1");
+            assertValidMove(4,7,6,7);
+            assertValidMove(4,0,6,0);
+        }
+
+        @Test
+        @DisplayName("Invalid castling when checked")
+        void InvalidCastle3() {
+            board.FENSetup("r3k2r/p2pp3/8/6Q1/7q/8/P2PP3/R3K2R w KQkq - 0 1");
+            assertFalse(board.MovePiece(4,7,6,7));
+            assertFalse(board.MovePiece(4,7,2,7));
+            assertValidMove(4,7,3,7);
+            assertValidMove(7,4,6,4);
+            assertValidMove(6,3,7,3);
+            assertFalse(board.MovePiece(4,0,6,0));
+            assertFalse(board.MovePiece(4,0,2,0));
+            assertValidMove(4,0,3,0);
+        }
+
+        @Test
+        @DisplayName("Invalid castle after moving king")
+        void InvalidCastle4() {
+            board.FENSetup("r3k2r/pppppppp/8/8/8/8/PPPPPPPP/R3K2R w KQkq - 0 1");
+            assertValidMove(4,7,5,7);
+            assertValidMove(4,0,5,0);
+            assertValidMove(5,7,4,7);
+            assertValidMove(5,0,4,0);
+            assertFalse(board.MovePiece(4,7,6,7));
+            assertFalse(board.MovePiece(4,7,2,7));
+            assertValidMove(4,7,3,7);
+            assertFalse(board.MovePiece(4,0,6,0));
+            assertFalse(board.MovePiece(4,0,2,0));
+            assertValidMove(4,0,3,0);
+        }
+
+        @Test
+        @DisplayName("Invalid castle after moving rook")
+        void InvalidCastle5() {
+            board.FENSetup("r3k2r/1pppppp1/p6p/8/8/P6P/1PPPPPP1/R3K2R w KQkq - 0 1");
+            assertValidMove(7,7,7,6);
+            assertValidMove(7,0,7,1);
+            assertValidMove(7,6,7,7);
+            assertValidMove(7,1,7,0);
+
+            assertFalse(board.MovePiece(4,7,6,7));
+            assertValidMove(0,7,0,6);
+            assertFalse(board.MovePiece(4,0,6,0));
+            assertValidMove(0,0,0,1);
+            assertValidMove(0,6,0,7);
+            assertValidMove(0,1,0,0);
+            assertFalse(board.MovePiece(4,7,2,7));
+            assertValidMove(4,7,5,7);
+            assertFalse(board.MovePiece(4,0,2,0));
+            assertValidMove(4,0,5,0);
+        }
+    }
+
+    void assertValidMove(int initX, int initY, int endX, int endY) {
+        Piece piece = board.getPositionStatus(initX, initY);
+        assertTrue(board.MovePiece(initX,initY,endX,endY));
+        assertEqualPieces(board.getPositionStatus(initX, initY), null);
+        assertEqualPieces(board.getPositionStatus(endX, endY), piece);
     }
 
     void assertEqualPieces(Piece piece1, Piece piece2) {
-        assertTrue((piece1.getName() == piece2.getName()) && (piece1.getColor() == piece2.getColor()));
+        if(piece1 == null || piece2 == null) {
+            assertNull(piece1);
+            assertNull(piece2);
+        } else {
+            assertTrue((piece1.getName() == piece2.getName()) && (piece1.getColor() == piece2.getColor()));
+        }
     }
 
     void assertCheck() {
