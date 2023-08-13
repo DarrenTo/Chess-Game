@@ -69,10 +69,18 @@ public class ChessBoard implements IChessBoard{
         if(castlingRights == INVALID_CASTLE) {
             return false;
         }
-        target = EnPassantCheck(fields[3]);
+        target = EnPassantCheck(fields[3], activeColor);
         if(target == INVALID_TARGET) {
             return false;
         }
+        if(target != NO_TARGET) {
+            if(activeColor == WHITE && !isEqualPiece(BLACK, PAWN, tempChessBoard[target.getValue() + 1][target.getKey()])) {
+                return false;
+            } else if(activeColor == BLACK && !isEqualPiece(WHITE, PAWN, tempChessBoard[target.getValue() - 1][target.getKey()])) {
+                return false;
+            }
+        }
+
         halfmoveClock = HalfMoveCheck(fields[4]);
         if(halfmoveClock == -1) {
             return false;
@@ -255,7 +263,7 @@ public class ChessBoard implements IChessBoard{
         return castle;
     }
 
-    private Pair<Integer, Integer> EnPassantCheck(String fen) {
+    private Pair<Integer, Integer> EnPassantCheck(String fen, Color activeColor) {
         if(fen.equals("-")) {
             return NO_TARGET;
         } else if(fen.length() != 2 || Character.isUpperCase(fen.charAt(0))) {
@@ -265,11 +273,11 @@ public class ChessBoard implements IChessBoard{
         try {
             int col = Character.getNumericValue(fen.charAt(0));
             int row = Character.getNumericValue(fen.charAt(1));
-            if((row != 3 && row != 6) || col < Character.getNumericValue('a') ||
+            if((activeColor == BLACK && row != 3) || (activeColor == WHITE && row != 6) || col < Character.getNumericValue('a') ||
                     col > Character.getNumericValue('h')) {
                 return INVALID_TARGET;
             }
-            return new Pair<>(ChessRowNotationToArrayPos(row),ChessColNotationToArrayPos(col));
+            return new Pair<>(ChessColNotationToArrayPos(col),ChessRowNotationToArrayPos(row));
         } catch(IndexOutOfBoundsException e) {
             return INVALID_TARGET;
         }
@@ -426,8 +434,8 @@ public class ChessBoard implements IChessBoard{
         return NO_CHECKS;
     }
 
-    private boolean isEqualPiece(Color attackColor, PieceName name, Piece piece) {
-        return piece != null && piece.getName() == name && piece.getColor() == attackColor;
+    private boolean isEqualPiece(Color color, PieceName name, Piece piece) {
+        return piece != null && piece.getName() == name && piece.getColor() == color;
     }
 
     private boolean containsPiece(Color attackColor, PieceName name, int x, int y, Piece[][] board) {
@@ -518,10 +526,17 @@ public class ChessBoard implements IChessBoard{
         return false;
     }
 
-    private Piece[][] Move(int initX, int initY, int endX, int endY) {
+    private Piece[][] MoveCheck(int initX, int initY, int endX, int endY) {
         Piece[][] board = new Piece[8][8];
         CopyBoard(this.chessBoard, board);
         Piece temp = getPositionStatus(initX, initY, board);
+        if(temp != null && temp.getName() == PAWN && enPassantPos.getKey() == endX && enPassantPos.getValue() == endY) {
+            if(activeColor == WHITE) {
+                board[endY + 1][endX] = null;
+            } else {
+                board[endY - 1][endX] = null;
+            }
+        }
         board[initY][initX] = null;
         board[endY][endX] = temp;
         return board;
@@ -531,7 +546,7 @@ public class ChessBoard implements IChessBoard{
         if(initX < 0 || initY < 0 || endX < 0 || endY < 0 || initX > 7 || initY > 7 || endX > 7 || endY > 7) {
             return false;
         }
-        Piece[][] board = Move(initX, initY, endX, endY);
+        Piece[][] board = MoveCheck(initX, initY, endX, endY);
         Piece piece = getPositionStatus(endX, endY);
         if(piece != null && piece.getColor() != attackColor) {
             return false;
@@ -664,7 +679,10 @@ public class ChessBoard implements IChessBoard{
             case ROOK:
                 return RookMove(initX, initY, endX, endY, status);
             case PAWN:
-                return PawnMove(initX, initY, endX, endY, status);
+                if(activeColor == WHITE) {
+                    return WhitePawnMove(initX, initY, endX, endY, status);
+                }
+                return BlackPawnMove(initX, initY, endX, endY, status);
             default:
                 return false;
         }
@@ -690,10 +708,94 @@ public class ChessBoard implements IChessBoard{
         return false;
     }
 
-    public boolean PawnMove(int initX, int initY, int endX, int endY, CheckStatus status) {
+    public boolean WhitePawnMove(int initX, int initY, int endX, int endY, CheckStatus status) {
+        if(initX == endX) {
+            if((initY - 1) == endY) { //check blocks for single move, set no enpassant
+                if(getPositionStatus(endX, endY) != null || !IsValidMove(initX, initY, endX, endY, BLACK, whiteKingPos)) {
+                    return false;
+                }
+                Move(initX, initY, endX, endY);
+                this.enPassantPos = NO_TARGET;
+                this.activeColor = BLACK;
+                return true;
+            } else if(((initY - 2) == endY) && initY == 6) { //check blocks for double move and set enpassant
+                if(getPositionStatus(endX + 1, endY + 1) != null || getPositionStatus(endX, endY) != null ||
+                        !IsValidMove(initX, initY, endX, endY, BLACK, whiteKingPos)) {
+                    return false;
+                }
+                Move(initX, initY, endX, endY);
+                this.enPassantPos = new Pair<>(endX, endY + 1);
+                this.activeColor = BLACK;
+                return true;
+            }
+        } else if((initY - 1) == endY) {
+            if((initX - 1) == endX || (initX + 1) == endX) { //check for valid capture on left or right or enpassant
+                if(getPositionStatus(endX, endY) == null) {
+                    if(enPassantPos.getKey() == endX && enPassantPos.getValue() == endY &&
+                    IsValidMove(initX, initY, endX, endY, BLACK, whiteKingPos)) {
+                        Move(initX, initY, endX, endY);
+                        this.chessBoard[endY + 1][endX] = null;
+                        this.enPassantPos = NO_TARGET;
+                        this.activeColor = BLACK;
+                        return true;
+                    }
+                } else if(getPositionStatus(endX, endY).getColor() == BLACK && IsValidMove(initX, initY, endX, endY, BLACK, whiteKingPos)) {
+                    Move(initX, initY, endX, endY);
+                    this.enPassantPos = NO_TARGET;
+                    this.activeColor = BLACK;
+                    return true;
+                }
+            }
+        }
         return false;
     }
 
+    public boolean BlackPawnMove(int initX, int initY, int endX, int endY, CheckStatus status) {
+        if(initX == endX) {
+            if((initY + 1) == endY) { //check blocks for single move, set no enpassant, set turn
+                if(getPositionStatus(endX, endY) != null || !IsValidMove(initX, initY, endX, endY, WHITE, blackKingPos)) {
+                    return false;
+                }
+                Move(initX, initY, endX, endY);
+                this.enPassantPos = NO_TARGET;
+                this.activeColor = WHITE;
+                return true;
+            } else if(((initY + 2) == endY) && initY == 1) { //check blocks for double move and set enpassant
+                if(getPositionStatus(endX - 1, endY - 1) != null || getPositionStatus(endX, endY) != null ||
+                        !IsValidMove(initX, initY, endX, endY, WHITE, blackKingPos)) {
+                    return false;
+                }
+                Move(initX, initY, endX, endY);
+                this.enPassantPos = new Pair<>(endX, endY - 1);
+                this.activeColor = WHITE;
+                return true;
+            }
+        } else if((initY + 1) == endY) {
+            if((initX - 1) == endX || (initX + 1) == endX) { //check for valid capture on left or right or enpassant
+                if(getPositionStatus(endX, endY) == null) {
+                    if(enPassantPos.getKey() == endX && enPassantPos.getValue() == endY && IsValidMove(initX, initY, endX, endY, WHITE, blackKingPos)) {
+                        Move(initX, initY, endX, endY);
+                        this.chessBoard[endY - 1][endX] = null;
+                        this.enPassantPos = NO_TARGET;
+                        this.activeColor = WHITE;
+                        return true;
+                    }
+                } else if(getPositionStatus(endX, endY).getColor() == BLACK && IsValidMove(initX, initY, endX, endY, WHITE, blackKingPos)) {
+                    Move(initX, initY, endX, endY);
+                    this.enPassantPos = NO_TARGET;
+                    this.activeColor = WHITE;
+                    return true;
+                }
+            }
+        }
+        return false;
+    }
+
+    private void Move(int initX, int initY, int endX, int endY) {
+        Piece temp = this.chessBoard[initY][initX];
+        this.chessBoard[initY][initX] = null;
+        this.chessBoard[endY][endX] = temp;
+    }
     @Override
     public List<Pair<Integer, Integer>> FindValidMoves(int x, int y) {
         return null;

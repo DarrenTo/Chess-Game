@@ -106,12 +106,14 @@ public class ChessBoardTest {
             @DisplayName("Invalid pawn in first row")
             void InvalidPawn() {
                 assertFalse(board.FENSetup("ppbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1"));
+                assertFalse(board.FENSetup("PPbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1"));
             }
 
             @Test
             @DisplayName("Invalid pawn in eighth row")
             void InvalidPawn2() {
                 assertFalse(board.FENSetup("rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/PPBQKBNR w KQkq - 0 1"));
+                assertFalse(board.FENSetup("rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/ppBQKBNR w KQkq - 0 1"));
             }
 
             @Test
@@ -229,28 +231,40 @@ public class ChessBoardTest {
         @Nested
         @DisplayName("En Passant Target")
         class EnPassantTest {
+
             @Test
             @DisplayName("Valid target a3")
             void ValidEnPassant() {
-                assertTrue(board.FENSetup("rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq a3 0 1"));
-            }
-
-            @Test
-            @DisplayName("Valid target h3")
-            void ValidEnPassant2() {
-                assertTrue(board.FENSetup("rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq h3 0 1"));
-            }
-
-            @Test
-            @DisplayName("Valid target a6")
-            void ValidEnPassant3() {
-                assertTrue(board.FENSetup("rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq a6 0 1"));
+                assertTrue(board.FENSetup("rnbqkbnr/pppppppp/8/8/P7/8/1PPPPPPP/RNBQKBNR b KQkq a3 0 1"));
             }
 
             @Test
             @DisplayName("Valid target h6")
-            void ValidEnPassant4() {
-                assertTrue(board.FENSetup("rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq h6 0 1"));
+            void ValidEnPassant2() {
+                assertTrue(board.FENSetup("rnbqkbnr/ppppppp1/8/7p/8/8/PPPPPPPP/RNBQKBNR w KQkq h6 0 1"));
+            }
+            @Test
+            @DisplayName("Valid target a3")
+            void InvalidEnPassant9() {
+                assertFalse(board.FENSetup("rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq a3 0 1"));
+            }
+
+            @Test
+            @DisplayName("Invalid target h3")
+            void ValidEnPassant8() {
+                assertFalse(board.FENSetup("rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq h3 0 1"));
+            }
+
+            @Test
+            @DisplayName("Invalid target a6")
+            void InvalidEnPassant7() {
+                assertFalse(board.FENSetup("rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq a6 0 1"));
+            }
+
+            @Test
+            @DisplayName("Invalid target h6")
+            void InvalidEnPassant6() {
+                assertFalse(board.FENSetup("rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq h6 0 1"));
             }
 
             @Test
@@ -879,6 +893,7 @@ public class ChessBoardTest {
         void PawnEnPassant() {
             board.FENSetup("rnbqkbnr/pppp1ppp/8/3Pp3/8/8/PPP1PPPP/RNBQKBNR w KQkq e6 0 1");
             assertValidMove(3, 3, 4, 2);
+            assertEqualPieces(board.getPositionStatus(4, 3), null);
         }
 
         @Test
@@ -886,6 +901,7 @@ public class ChessBoardTest {
         void PawnEnPassant2() {
             board.FENSetup("rnbqkbnr/ppp1pppp/8/3pP3/8/8/PPPP1PPP/RNBQKBNR w KQkq d6 0 1");
             assertValidMove(4, 3, 3, 2);
+            assertEqualPieces(board.getPositionStatus(3,3), null);
         }
 
         @Test
@@ -917,11 +933,18 @@ public class ChessBoardTest {
         }
 
         @Test
+        @DisplayName("Invalid En Passant into Check")
+        void InvalidPawnMove8() {
+            board.FENSetup("rn1qkbnr/ppp1pppp/2b5/3pP3/8/5K2/PPPP1PPP/RNBQ1BNR w kq d6 0 1");
+            assertFalse(board.MovePiece(4,3,3,3));
+        }
+
+        @Test
         @DisplayName("Invalid En Passant")
         void InvalidPawnMove5() {
             board.FENSetup("rnbqkbnr/ppp1pppp/8/3p4/4P3/8/PPPP1PPP/RNBQKBNR w KQkq - 0 1");
-            assertTrue(board.MovePiece(4, 4, 4, 5));
-            assertTrue(board.MovePiece(2, 1, 2, 3));
+            assertValidMove(4, 4, 4, 3);
+            assertValidMove(2, 1, 2, 3);
             assertFalse(board.MovePiece(4, 3, 3, 2));
         }
 
@@ -958,6 +981,7 @@ public class ChessBoardTest {
         void BlackPawnMove3 () {
             board.FENSetup("rnbqkbnr/ppp1pppp/8/8/3pP3/8/PPPP1PPP/RNBQKBNR b KQkq e3 0 1");
             assertValidMove(3, 4, 4, 5);
+            assertEqualPieces(board.getPositionStatus(4,4), null);
         }
 
         @Test
