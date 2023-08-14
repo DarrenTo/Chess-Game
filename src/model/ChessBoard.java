@@ -663,7 +663,7 @@ public class ChessBoard implements IChessBoard{
     public boolean MovePiece(int initX, int initY, int endX, int endY) {
         Piece piece = getPositionStatus(initX, initY);
         CheckStatus status = FindCheckStatus();
-        if(piece == null || piece.getColor() != activeColor || status == CheckStatus.CHECKMATE) {
+        if(piece == null || piece.getColor() != activeColor || status == CheckStatus.CHECKMATE || (initX == endX && initY == endY)) {
             return false;
         }
 
@@ -671,44 +671,235 @@ public class ChessBoard implements IChessBoard{
             case KING:
                 return KingMove(initX, initY, endX, endY, status);
             case QUEEN:
-                return QueenMove(initX, initY, endX, endY, status);
+                return QueenMove(initX, initY, endX, endY);
             case BISHOP:
-                return BishopMove(initX, initY, endX, endY, status);
+                return BishopMove(initX, initY, endX, endY);
             case KNIGHT:
-                return KnightMove(initX, initY, endX, endY, status);
+                return KnightMove(initX, initY, endX, endY);
             case ROOK:
-                return RookMove(initX, initY, endX, endY, status);
+                return RookMove(initX, initY, endX, endY);
             case PAWN:
                 if(activeColor == WHITE) {
-                    return WhitePawnMove(initX, initY, endX, endY, status);
+                    return WhitePawnMove(initX, initY, endX, endY);
                 }
-                return BlackPawnMove(initX, initY, endX, endY, status);
+                return BlackPawnMove(initX, initY, endX, endY);
             default:
                 return false;
         }
     }
 
     public boolean KingMove(int initX, int initY, int endX, int endY, CheckStatus status) {
+        int validX = Math.abs(initX - endX);
+        int validY = Math.abs(initY - endY);
+        if((validX == 1 || validX == 0) && (validY == 1 || validY == 0)) {
+            if (getPositionStatus(endX, endY) != null && getPositionStatus(endX, endY).getColor() == activeColor) {
+                return false;
+            }
+
+            if(IsValidMove(initX, initY, endX, endY, getAttackColor(), new Pair<>(endX, endY))) {
+                Move(initX, initY, endX, endY);
+                enPassantPos = NO_TARGET;
+                InvalidateKingCastling(endX, endY);
+                activeColor = getAttackColor();
+                return true;
+            }
+        } else if(initY == endY && Math.abs(initX - endX) == 2) {
+            if((activeColor == WHITE && initX == 4 && initY == 7) ||
+                    (activeColor == BLACK && initX == 4 && initY == 0)) {
+                if(status == CheckStatus.CHECK) {
+                    return false;
+                }
+                return Castling(initX, initY, endX, endY);
+            }
+        }
         return false;
     }
 
-    public boolean QueenMove(int initX, int initY, int endX, int endY, CheckStatus status) {
+    public boolean Castling(int initX, int initY, int endX, int endY) {
+            if(endX == 6 && (activeColor == WHITE ? whiteKingSideCastle : blackKingSideCastle)) {
+                if (getPositionStatus(endX, endY) != null || getPositionStatus(endX - 1, endY) != null) {
+                    return false;
+                }
+
+                if(IsValidMove(initX, initY, endX, endY, getAttackColor(), new Pair<>(endX, endY)) &&
+                        IsValidMove(initX, initY, endX - 1, endY, getAttackColor(), new Pair<>(endX - 1, endY))) {
+                    Move(initX, initY, endX, endY);
+                    Move(endX + 1, endY, endX - 1, endY);
+                    InvalidateKingCastling(endX, endY);
+                    enPassantPos = NO_TARGET;
+                    activeColor = getAttackColor();
+                    return true;
+                }
+            } else if(activeColor == WHITE ? whiteQueenSideCastle : blackKingSideCastle) {
+                if (getPositionStatus(endX, endY) != null || getPositionStatus(endX - 1, endY) != null ||
+                        getPositionStatus(endX + 1, endY) != null) {
+                    return false;
+                }
+
+                if(IsValidMove(initX, initY, endX, endY, getAttackColor(), new Pair<>(endX, endY)) &&
+                        IsValidMove(initX, initY, endX + 1, endY, getAttackColor(), new Pair<>(endX + 1, endY))) {
+                    Move(initX, initY, endX, endY);
+                    Move(endX - 2, endY, endX + 1, endY);
+                    InvalidateKingCastling(endX, endY);
+                    enPassantPos = NO_TARGET;
+                    activeColor = getAttackColor();
+                    return true;
+                }
+            }
         return false;
     }
 
-    public boolean BishopMove(int initX, int initY, int endX, int endY, CheckStatus status) {
+    private void InvalidateKingCastling(int endX, int endY) {
+        if(activeColor == WHITE) {
+            whiteKingPos = new Pair<>(endX, endY);
+            whiteKingSideCastle = false;
+            whiteQueenSideCastle = false;
+        } else {
+            blackKingPos = new Pair<>(endX, endY);
+            blackKingSideCastle = false;
+            blackQueenSideCastle = false;
+        }
+    }
+
+    public boolean QueenMove(int initX, int initY, int endX, int endY) {
+        if(initX == endX || initY == endY) {
+            return RookMove(initX, initY, endX, endY);
+        } else if(Math.abs(initX - endX) == Math.abs(initY - endY)) {
+            return BishopMove(initX, initY, endX, endY);
+        }
         return false;
     }
 
-    public boolean KnightMove(int initX, int initY, int endX, int endY, CheckStatus status) {
+    public boolean BishopMove(int initX, int initY, int endX, int endY) {
+        if(Math.abs(initX - endX) == Math.abs(initY - endY)) {
+            Direction dir = BishopMoveDirection(initX, initY, endX, endY);
+            for(int i = 1; i < Math.abs(initX - endX); i++) {
+                int x = initX + (dir.dir.getKey()*i);
+                int y = initY + (dir.dir.getValue()*i);
+                if(getPositionStatus(x, y) != null) {
+                    return false;
+                }
+            }
+            if (getPositionStatus(endX, endY) != null && getPositionStatus(endX, endY).getColor() == activeColor) {
+                return false;
+            }
+
+            if(IsValidMove(initX, initY, endX, endY, getAttackColor(), getKingPos())) {
+                Move(initX, initY, endX, endY);
+                enPassantPos = NO_TARGET;
+                activeColor = getAttackColor();
+                return true;
+            }
+        }
         return false;
     }
 
-    public boolean RookMove(int initX, int initY, int endX, int endY, CheckStatus status) {
+    private Direction BishopMoveDirection(int initX, int initY, int endX, int endY) {
+        if(initX - endX < 0) {
+            if(initY - endY < 0) {
+                return Direction.DOWN_RIGHT_DIAGONAL;
+            }
+            return Direction.UP_RIGHT_DIAGONAL;
+        } else {
+            if(initY - endY < 0) {
+                return Direction.DOWN_LEFT_DIAGONAL;
+            }
+            return Direction.UP_LEFT_DIAGONAL;
+        }
+    }
+
+    public boolean KnightMove(int initX, int initY, int endX, int endY) {
+        if((Math.abs(initX - endX) == 2 && (Math.abs(initY - endY) == 1)) ||
+                (Math.abs(initX - endX) == 1 && Math.abs(initY - endY) == 2)) {
+
+            if (getPositionStatus(endX, endY) != null && getPositionStatus(endX, endY).getColor() == activeColor) {
+                return false;
+            }
+
+            if(IsValidMove(initX, initY, endX, endY, getAttackColor(), getKingPos())) {
+                Move(initX, initY, endX, endY);
+                enPassantPos = NO_TARGET;
+                activeColor = getAttackColor();
+                return true;
+            }
+        }
         return false;
     }
 
-    public boolean WhitePawnMove(int initX, int initY, int endX, int endY, CheckStatus status) {
+    public boolean RookMove(int initX, int initY, int endX, int endY) {
+        if (initX == endX) {
+            if (initY < endY) {
+                for (int i = initY + 1; i < endY; i++) {
+                    if (getPositionStatus(endX, i) != null) {
+                        return false;
+                    }
+                }
+            } else {
+                for (int i = initY - 1; i > endY; i--) {
+                    if (getPositionStatus(endX, i) != null) {
+                        return false;
+                    }
+                }
+            }
+
+            if (getPositionStatus(endX, endY) != null && getPositionStatus(endX, endY).getColor() == activeColor) {
+                return false;
+            }
+
+            if (IsValidMove(initX, initY, endX, endY, getAttackColor(), getKingPos())) {
+                Move(initX, initY, endX, endY);
+                InvalidateCastling(initX, initY);
+                enPassantPos = NO_TARGET;
+                activeColor = getAttackColor();
+                return true;
+            }
+        } else if (initY == endY) {
+            if (initX < endX) {
+                for (int i = initX + 1; i < endX; i++) {
+                    if (getPositionStatus(i, endY) != null) {
+                        return false;
+                    }
+                }
+            } else {
+                for (int i = initX - 1; i > endX; i--) {
+                    if (getPositionStatus(i, endY) != null) {
+                        return false;
+                    }
+                }
+            }
+
+            if (getPositionStatus(endX, endY) != null && getPositionStatus(endX, endY).getColor() == activeColor) {
+                return false;
+            }
+
+            if (IsValidMove(initX, initY, endX, endY, getAttackColor(), getKingPos())) {
+                Move(initX, initY, endX, endY);
+                InvalidateCastling(initX, initY);
+                enPassantPos = NO_TARGET;
+                activeColor = getAttackColor();
+                return true;
+            }
+        }
+        return false;
+    }
+
+    private void InvalidateCastling(int x, int y) {
+        if(activeColor == WHITE) {
+            if(x == 0 && y == 7) {
+                whiteQueenSideCastle = false;
+            } else if(x == 7 && y == 7) {
+                whiteKingSideCastle = false;
+            }
+        } else {
+            if(x == 0 && y == 0) {
+                blackQueenSideCastle = false;
+            } else if(x == 7 && y == 0){
+                blackKingSideCastle = false;
+            }
+        }
+    }
+
+    public boolean WhitePawnMove(int initX, int initY, int endX, int endY) {
         if(initX == endX) {
             if((initY - 1) == endY) { //check blocks for single move, set no enpassant
                 if(getPositionStatus(endX, endY) != null || !IsValidMove(initX, initY, endX, endY, BLACK, whiteKingPos)) {
@@ -750,7 +941,7 @@ public class ChessBoard implements IChessBoard{
         return false;
     }
 
-    public boolean BlackPawnMove(int initX, int initY, int endX, int endY, CheckStatus status) {
+    public boolean BlackPawnMove(int initX, int initY, int endX, int endY) {
         if(initX == endX) {
             if((initY + 1) == endY) { //check blocks for single move, set no enpassant, set turn
                 if(getPositionStatus(endX, endY) != null || !IsValidMove(initX, initY, endX, endY, WHITE, blackKingPos)) {
@@ -780,7 +971,7 @@ public class ChessBoard implements IChessBoard{
                         this.activeColor = WHITE;
                         return true;
                     }
-                } else if(getPositionStatus(endX, endY).getColor() == BLACK && IsValidMove(initX, initY, endX, endY, WHITE, blackKingPos)) {
+                } else if(getPositionStatus(endX, endY).getColor() == WHITE && IsValidMove(initX, initY, endX, endY, WHITE, blackKingPos)) {
                     Move(initX, initY, endX, endY);
                     this.enPassantPos = NO_TARGET;
                     this.activeColor = WHITE;
@@ -795,6 +986,14 @@ public class ChessBoard implements IChessBoard{
         Piece temp = this.chessBoard[initY][initX];
         this.chessBoard[initY][initX] = null;
         this.chessBoard[endY][endX] = temp;
+    }
+
+    private Color getAttackColor() {
+        return activeColor == WHITE ? BLACK : WHITE;
+    }
+
+    private Pair<Integer, Integer> getKingPos() {
+        return activeColor == WHITE ? whiteKingPos : blackKingPos;
     }
     @Override
     public List<Pair<Integer, Integer>> FindValidMoves(int x, int y) {

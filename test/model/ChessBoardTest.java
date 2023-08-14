@@ -1001,7 +1001,7 @@ public class ChessBoardTest {
         @Test
         @DisplayName("Valid Rook Move")
         void RookMove() {
-            board.FENSetup("rrnbqkbnr/ppppppp1/8/7p/P7/8/1PPPPPPP/RNBQKBNR w KQkq - 0 1");
+            board.FENSetup("rnbqkbnr/ppppppp1/8/7p/P7/8/1PPPPPPP/RNBQKBNR w KQkq - 0 1");
             assertValidMove(0,7, 0, 5);
             assertValidMove(7,0,7,2);
             assertValidMove(0,5,3,5);
@@ -1035,7 +1035,7 @@ public class ChessBoardTest {
         @Test
         @DisplayName("Invalid Rook Capture")
         void InvalidRookCapture() {
-            board.FENSetup("rnb1k3/ppp1pppp/4q3/N2r4/4R2n/3Q4/1PPP1PPP/2B1KBNR w Kq - 0 1");
+            board.FENSetup("rnbk4/ppp1pppp/4q3/N2r4/4R2n/3Q4/1PPP1PPP/2B1KBNR w K - 0 1");
             assertFalse(board.MovePiece(4,4,7,4));
             assertValidMove(4, 4, 4, 2);
             assertFalse(board.MovePiece(3, 3, 0, 3));
@@ -1118,7 +1118,7 @@ public class ChessBoardTest {
 
         @Test
         @DisplayName("Invalid Queen Move")
-        void InValidQueenMove() {
+        void InvalidQueenMove() {
             board.FENSetup("1nbk1bnr/p3pppp/1p1qr3/5P2/P1p5/3RQ1P1/1PPP3P/1NB1KBNR w K - 0 1");
             assertFalse(board.MovePiece(4, 5, 5, 5));
             assertValidMove(5, 3, 4, 2);
@@ -1128,7 +1128,7 @@ public class ChessBoardTest {
             assertFalse(board.MovePiece(4, 5, 4, 1));
             assertFalse(board.MovePiece(4, 5, 0, 1));
             assertFalse(board.MovePiece(4, 5, 3, 3));
-            assertValidMove(4, 5, 3, 5);
+            assertValidMove(4, 5, 5, 5);
             assertFalse(board.MovePiece(3, 2, 3, 5));
             assertFalse(board.MovePiece(3, 2, 3, 6));
             assertFalse(board.MovePiece(3, 2, 7, 6));
@@ -1139,11 +1139,11 @@ public class ChessBoardTest {
         @Test
         @DisplayName("Valid King Move")
         void ValidKingMove() {
-            board.FENSetup("rnb2bnr/ppppkppp/8/2P5/4p3/3P4/PP1KPPPP/RNB2BNR w - - 0 1");
+            board.FENSetup("rnb2bnr/ppppkppp/2P5/8/4p3/8/PPPKPPPP/RNB2BNR w - - 0 1");
             assertValidMove(3,6,4,5);
             assertValidMove(4,1,3,2);
             assertValidMove(4,5,4,4);
-            assertValidMove(4,1,2,3);
+            assertValidMove(3,2,2,2);
         }
 
         @Test
@@ -1153,7 +1153,7 @@ public class ChessBoardTest {
             assertFalse(board.MovePiece(4,7,4,6));
             assertValidMove(3,6,3,5);
             assertFalse(board.MovePiece(4,0,4,1));
-            assertValidMove(5,2,5,3);
+            assertValidMove(5,1,5,2);
             assertFalse(board.MovePiece(4,7,6, 7));
             assertFalse(board.MovePiece(4,7,2,7));
             assertValidMove(4,7,5,7);
@@ -1191,7 +1191,7 @@ public class ChessBoardTest {
             assertValidMove(4,7,5,7);
             assertFalse(board.MovePiece(4,0,6,0));
             assertFalse(board.MovePiece(4,0,2,0));
-            assertValidMove(4,0,5,0);
+            assertValidMove(4,0,3,0);
         }
 
         @Test
