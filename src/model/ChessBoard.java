@@ -4,8 +4,11 @@ import javafx.util.Pair;
 import model.enums.*;
 import model.pieces.*;
 
+import java.util.ArrayList;
 import java.util.List;
+import java.util.Objects;
 
+import static model.enums.Castling.*;
 import static model.enums.Color.*;
 import static model.enums.PieceName.*;
 
@@ -26,6 +29,9 @@ public class ChessBoard implements IChessBoard{
     private Pair<Integer, Integer> blackKingPos;
     private Pair<Integer, Integer> whiteKingPos;
 
+    private final List<Piece> whiteCapturedPieces;
+    private final List<Piece> blackCapturedPieces;
+
     private static final Pair<String, String> INVALID_FEN = new Pair<>("", "");
     private static final byte INVALID_CASTLE = 0b11111;
     private static final byte WHITE_KING_CASTLE_MASK = 0b1000;
@@ -41,7 +47,11 @@ public class ChessBoard implements IChessBoard{
         chessBoard = new Piece[8][8];
 //        blackKingPos = new ArrayList<>();
 //        whiteKingPos = new ArrayList<>();
+        whiteCapturedPieces = new ArrayList<>();
+        blackCapturedPieces = new ArrayList<>();
+
         threefoldRep = new SimpleThreefoldRepetition();
+        FENSetup("rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1");
     }
 
     @Override
@@ -667,131 +677,137 @@ public class ChessBoard implements IChessBoard{
             return false;
         }
 
+        MoveClassification validMove;
         switch(piece.getName()) {
             case KING:
-                return KingMove(initX, initY, endX, endY, status);
+                validMove = KingMove(initX, initY, endX, endY, status);
+                break;
             case QUEEN:
-                return QueenMove(initX, initY, endX, endY);
+                validMove = QueenMove(initX, initY, endX, endY);
+                break;
             case BISHOP:
-                return BishopMove(initX, initY, endX, endY);
+                validMove = BishopMove(initX, initY, endX, endY);
+                break;
             case KNIGHT:
-                return KnightMove(initX, initY, endX, endY);
+                validMove = KnightMove(initX, initY, endX, endY);
+                break;
             case ROOK:
-                return RookMove(initX, initY, endX, endY);
+                validMove = RookMove(initX, initY, endX, endY);
+                break;
             case PAWN:
                 if(activeColor == WHITE) {
-                    return WhitePawnMove(initX, initY, endX, endY);
+                    validMove = WhitePawnMove(initX, initY, endX, endY);
+                } else {
+                    validMove = BlackPawnMove(initX, initY, endX, endY);
                 }
-                return BlackPawnMove(initX, initY, endX, endY);
+                break;
             default:
                 return false;
         }
+        if(!validMove.validMove) {
+            return false;
+        }
+        Move(initX, initY, endX, endY);
+        this.enPassantPos = validMove.enPassantTarget;
+
+        if(validMove.enPassantCapture != NO_TARGET) {
+            int x = validMove.enPassantCapture.getKey();
+            int y = validMove.enPassantCapture.getValue();
+            this.chessBoard[y][x] = null;
+        }
+
+        if(validMove.pieceCaptured != null) {
+              if(activeColor == WHITE) {
+                  whiteCapturedPieces.add(validMove.pieceCaptured);
+              } else {
+                  blackCapturedPieces.add(validMove.pieceCaptured);
+              }
+        } else if(validMove.castle != NO_CASTLE) {
+            InvalidateCastling(validMove.castle, endX, endY);
+        }
+
+        if(piece.getName() != PAWN || validMove.pieceCaptured == null) {
+            halfmoveClock++;
+        }
+
+        if(this.activeColor == BLACK) {
+            fullmoveNumber++;
+        }
+
+        this.activeColor = getAttackColor();
+        return true;
     }
 
-    public boolean KingMove(int initX, int initY, int endX, int endY, CheckStatus status) {
+    public MoveClassification KingMove(int initX, int initY, int endX, int endY, CheckStatus status) {
         int validX = Math.abs(initX - endX);
         int validY = Math.abs(initY - endY);
         if((validX == 1 || validX == 0) && (validY == 1 || validY == 0)) {
             if (getPositionStatus(endX, endY) != null && getPositionStatus(endX, endY).getColor() == activeColor) {
-                return false;
+                return new MoveClassification(false);
             }
 
             if(IsValidMove(initX, initY, endX, endY, getAttackColor(), new Pair<>(endX, endY))) {
-                Move(initX, initY, endX, endY);
-                enPassantPos = NO_TARGET;
-                InvalidateKingCastling(endX, endY);
-                activeColor = getAttackColor();
-                return true;
+                return new MoveClassification(getPositionStatus(endX,endY), KING_MOVED);
             }
         } else if(initY == endY && Math.abs(initX - endX) == 2) {
             if((activeColor == WHITE && initX == 4 && initY == 7) ||
                     (activeColor == BLACK && initX == 4 && initY == 0)) {
                 if(status == CheckStatus.CHECK) {
-                    return false;
+                    return new MoveClassification(false);
                 }
                 return Castling(initX, initY, endX, endY);
             }
         }
-        return false;
+        return new MoveClassification(false);
     }
 
-    public boolean Castling(int initX, int initY, int endX, int endY) {
+    public MoveClassification Castling(int initX, int initY, int endX, int endY) {
             if(endX == 6 && (activeColor == WHITE ? whiteKingSideCastle : blackKingSideCastle)) {
-                if (getPositionStatus(endX, endY) != null || getPositionStatus(endX - 1, endY) != null) {
-                    return false;
-                }
-
                 if(IsValidMove(initX, initY, endX, endY, getAttackColor(), new Pair<>(endX, endY)) &&
                         IsValidMove(initX, initY, endX - 1, endY, getAttackColor(), new Pair<>(endX - 1, endY))) {
-                    Move(initX, initY, endX, endY);
-                    Move(endX + 1, endY, endX - 1, endY);
-                    InvalidateKingCastling(endX, endY);
-                    enPassantPos = NO_TARGET;
-                    activeColor = getAttackColor();
-                    return true;
+                    return new MoveClassification(activeColor == WHITE ? WHITE_KING_SIDE : BLACK_KING_SIDE);
                 }
-            } else if(activeColor == WHITE ? whiteQueenSideCastle : blackKingSideCastle) {
-                if (getPositionStatus(endX, endY) != null || getPositionStatus(endX - 1, endY) != null ||
-                        getPositionStatus(endX + 1, endY) != null) {
-                    return false;
+            } else if(activeColor == WHITE ? whiteQueenSideCastle : blackQueenSideCastle) {
+                if (getPositionStatus(endX - 1, endY) != null) {
+                    return new MoveClassification(false);
                 }
 
                 if(IsValidMove(initX, initY, endX, endY, getAttackColor(), new Pair<>(endX, endY)) &&
                         IsValidMove(initX, initY, endX + 1, endY, getAttackColor(), new Pair<>(endX + 1, endY))) {
-                    Move(initX, initY, endX, endY);
-                    Move(endX - 2, endY, endX + 1, endY);
-                    InvalidateKingCastling(endX, endY);
-                    enPassantPos = NO_TARGET;
-                    activeColor = getAttackColor();
-                    return true;
+                    return new MoveClassification(activeColor == WHITE ? WHITE_QUEEN_SIDE : BLACK_QUEEN_SIDE);
                 }
             }
-        return false;
+        return new MoveClassification(false);
     }
 
-    private void InvalidateKingCastling(int endX, int endY) {
-        if(activeColor == WHITE) {
-            whiteKingPos = new Pair<>(endX, endY);
-            whiteKingSideCastle = false;
-            whiteQueenSideCastle = false;
-        } else {
-            blackKingPos = new Pair<>(endX, endY);
-            blackKingSideCastle = false;
-            blackQueenSideCastle = false;
-        }
-    }
-
-    public boolean QueenMove(int initX, int initY, int endX, int endY) {
+    public MoveClassification QueenMove(int initX, int initY, int endX, int endY) {
         if(initX == endX || initY == endY) {
             return RookMove(initX, initY, endX, endY);
         } else if(Math.abs(initX - endX) == Math.abs(initY - endY)) {
             return BishopMove(initX, initY, endX, endY);
         }
-        return false;
+        return new MoveClassification(false);
     }
 
-    public boolean BishopMove(int initX, int initY, int endX, int endY) {
+    public MoveClassification BishopMove(int initX, int initY, int endX, int endY) {
         if(Math.abs(initX - endX) == Math.abs(initY - endY)) {
             Direction dir = BishopMoveDirection(initX, initY, endX, endY);
             for(int i = 1; i < Math.abs(initX - endX); i++) {
                 int x = initX + (dir.dir.getKey()*i);
                 int y = initY + (dir.dir.getValue()*i);
                 if(getPositionStatus(x, y) != null) {
-                    return false;
+                    return new MoveClassification(false);
                 }
             }
             if (getPositionStatus(endX, endY) != null && getPositionStatus(endX, endY).getColor() == activeColor) {
-                return false;
+                return new MoveClassification(false);
             }
 
             if(IsValidMove(initX, initY, endX, endY, getAttackColor(), getKingPos())) {
-                Move(initX, initY, endX, endY);
-                enPassantPos = NO_TARGET;
-                activeColor = getAttackColor();
-                return true;
+                return new MoveClassification(getPositionStatus(endX,endY));
             }
         }
-        return false;
+        return new MoveClassification(false);
     }
 
     private Direction BishopMoveDirection(int initX, int initY, int endX, int endY) {
@@ -808,178 +824,185 @@ public class ChessBoard implements IChessBoard{
         }
     }
 
-    public boolean KnightMove(int initX, int initY, int endX, int endY) {
+    public MoveClassification KnightMove(int initX, int initY, int endX, int endY) {
         if((Math.abs(initX - endX) == 2 && (Math.abs(initY - endY) == 1)) ||
                 (Math.abs(initX - endX) == 1 && Math.abs(initY - endY) == 2)) {
 
             if (getPositionStatus(endX, endY) != null && getPositionStatus(endX, endY).getColor() == activeColor) {
-                return false;
+                return new MoveClassification(false);
             }
 
             if(IsValidMove(initX, initY, endX, endY, getAttackColor(), getKingPos())) {
-                Move(initX, initY, endX, endY);
-                enPassantPos = NO_TARGET;
-                activeColor = getAttackColor();
-                return true;
+                return new MoveClassification(getPositionStatus(endX, endY));
             }
         }
-        return false;
+        return new MoveClassification(false);
     }
 
-    public boolean RookMove(int initX, int initY, int endX, int endY) {
+    public MoveClassification RookMove(int initX, int initY, int endX, int endY) {
         if (initX == endX) {
             if (initY < endY) {
                 for (int i = initY + 1; i < endY; i++) {
                     if (getPositionStatus(endX, i) != null) {
-                        return false;
+                        return new MoveClassification(false);
                     }
                 }
             } else {
                 for (int i = initY - 1; i > endY; i--) {
                     if (getPositionStatus(endX, i) != null) {
-                        return false;
+                        return new MoveClassification(false);
                     }
                 }
             }
 
-            if (getPositionStatus(endX, endY) != null && getPositionStatus(endX, endY).getColor() == activeColor) {
-                return false;
-            }
-
-            if (IsValidMove(initX, initY, endX, endY, getAttackColor(), getKingPos())) {
-                Move(initX, initY, endX, endY);
-                InvalidateCastling(initX, initY);
-                enPassantPos = NO_TARGET;
-                activeColor = getAttackColor();
-                return true;
-            }
         } else if (initY == endY) {
             if (initX < endX) {
                 for (int i = initX + 1; i < endX; i++) {
                     if (getPositionStatus(i, endY) != null) {
-                        return false;
+                        return new MoveClassification(false);
                     }
                 }
             } else {
                 for (int i = initX - 1; i > endX; i--) {
                     if (getPositionStatus(i, endY) != null) {
-                        return false;
+                        return new MoveClassification(false);
                     }
                 }
             }
-
-            if (getPositionStatus(endX, endY) != null && getPositionStatus(endX, endY).getColor() == activeColor) {
-                return false;
-            }
-
-            if (IsValidMove(initX, initY, endX, endY, getAttackColor(), getKingPos())) {
-                Move(initX, initY, endX, endY);
-                InvalidateCastling(initX, initY);
-                enPassantPos = NO_TARGET;
-                activeColor = getAttackColor();
-                return true;
-            }
-        }
-        return false;
-    }
-
-    private void InvalidateCastling(int x, int y) {
-        if(activeColor == WHITE) {
-            if(x == 0 && y == 7) {
-                whiteQueenSideCastle = false;
-            } else if(x == 7 && y == 7) {
-                whiteKingSideCastle = false;
-            }
         } else {
-            if(x == 0 && y == 0) {
-                blackQueenSideCastle = false;
-            } else if(x == 7 && y == 0){
-                blackKingSideCastle = false;
+            return new MoveClassification(false);
+        }
+
+        if(getPositionStatus(endX, endY) != null && getPositionStatus(endX, endY).getColor() == activeColor) {
+            return new MoveClassification(false);
+        }
+
+        if(IsValidMove(initX, initY, endX, endY, getAttackColor(), getKingPos())) {
+            if(activeColor == WHITE) {
+                if(initX == 0 && initY == 7) {
+                    return new MoveClassification(getPositionStatus(endX, endY), QUEEN_ROOK_MOVED);
+                } else if(initX == 7 && initY == 7) {
+                   return new MoveClassification(getPositionStatus(endX, endY), KING_ROOK_MOVED);
+                }
+            } else {
+                if(initX == 0 && initY == 0) {
+                    return new MoveClassification(getPositionStatus(endX, endY), QUEEN_ROOK_MOVED);
+                } else if(initX == 7 && initY == 0){
+                    return new MoveClassification(getPositionStatus(endX, endY), KING_ROOK_MOVED);
+                }
             }
+            return new MoveClassification(getPositionStatus(endX, endY));
+        }
+
+        return new MoveClassification(false);
+    }
+
+    private void InvalidateCastling(Castling castle, int endX, int endY) {
+        switch(castle) {
+
+            case BLACK_KING_SIDE:
+            case WHITE_KING_SIDE:
+                Move(endX + 1, endY, endX - 1, endY);
+                if(activeColor == WHITE) {
+                    whiteKingSideCastle = false;
+                    whiteQueenSideCastle = false;
+                } else {
+                    blackKingSideCastle = false;
+                    blackQueenSideCastle = false;
+                }
+                break;
+            case BLACK_QUEEN_SIDE:
+            case WHITE_QUEEN_SIDE:
+                Move(endX - 2, endY, endX + 1, endY);
+                if(activeColor == WHITE) {
+                    whiteKingSideCastle = false;
+                    whiteQueenSideCastle = false;
+                } else {
+                    blackKingSideCastle = false;
+                    blackQueenSideCastle = false;
+                }
+                break;
+            case KING_MOVED:
+                if(activeColor == WHITE) {
+                    whiteKingSideCastle = false;
+                    whiteQueenSideCastle = false;
+                } else {
+                    blackKingSideCastle = false;
+                    blackQueenSideCastle = false;
+                }
+                break;
+            case KING_ROOK_MOVED:
+                if(activeColor == WHITE) {
+                    whiteKingSideCastle = false;
+                } else {
+                    blackKingSideCastle = false;
+                }
+                break;
+            case QUEEN_ROOK_MOVED:
+                if(activeColor == WHITE) {
+                    whiteQueenSideCastle = false;
+                } else {
+                    blackQueenSideCastle = false;
+                }
+                break;
         }
     }
 
-    public boolean WhitePawnMove(int initX, int initY, int endX, int endY) {
+    public MoveClassification WhitePawnMove(int initX, int initY, int endX, int endY) {
         if(initX == endX) {
             if((initY - 1) == endY) { //check blocks for single move, set no enpassant
                 if(getPositionStatus(endX, endY) != null || !IsValidMove(initX, initY, endX, endY, BLACK, whiteKingPos)) {
-                    return false;
+                    return new MoveClassification(false);
                 }
-                Move(initX, initY, endX, endY);
-                this.enPassantPos = NO_TARGET;
-                this.activeColor = BLACK;
-                return true;
+                return new MoveClassification(true);
             } else if(((initY - 2) == endY) && initY == 6) { //check blocks for double move and set enpassant
-                if(getPositionStatus(endX + 1, endY + 1) != null || getPositionStatus(endX, endY) != null ||
+                if(getPositionStatus(endX, endY + 1) != null || getPositionStatus(endX, endY) != null ||
                         !IsValidMove(initX, initY, endX, endY, BLACK, whiteKingPos)) {
-                    return false;
+                    return new MoveClassification(false);
                 }
-                Move(initX, initY, endX, endY);
-                this.enPassantPos = new Pair<>(endX, endY + 1);
-                this.activeColor = BLACK;
-                return true;
+                return new MoveClassification(new Pair<>(endX, endY + 1));
             }
         } else if((initY - 1) == endY) {
             if((initX - 1) == endX || (initX + 1) == endX) { //check for valid capture on left or right or enpassant
                 if(getPositionStatus(endX, endY) == null) {
                     if(enPassantPos.getKey() == endX && enPassantPos.getValue() == endY &&
                     IsValidMove(initX, initY, endX, endY, BLACK, whiteKingPos)) {
-                        Move(initX, initY, endX, endY);
-                        this.chessBoard[endY + 1][endX] = null;
-                        this.enPassantPos = NO_TARGET;
-                        this.activeColor = BLACK;
-                        return true;
+                        return new MoveClassification(new Pair<>(endX, endY + 1), getPositionStatus(endX, endY + 1));
                     }
                 } else if(getPositionStatus(endX, endY).getColor() == BLACK && IsValidMove(initX, initY, endX, endY, BLACK, whiteKingPos)) {
-                    Move(initX, initY, endX, endY);
-                    this.enPassantPos = NO_TARGET;
-                    this.activeColor = BLACK;
-                    return true;
+                    return new MoveClassification(getPositionStatus(endX, endY));
                 }
             }
         }
-        return false;
+        return new MoveClassification(false);
     }
 
-    public boolean BlackPawnMove(int initX, int initY, int endX, int endY) {
+    public MoveClassification BlackPawnMove(int initX, int initY, int endX, int endY) {
         if(initX == endX) {
             if((initY + 1) == endY) { //check blocks for single move, set no enpassant, set turn
                 if(getPositionStatus(endX, endY) != null || !IsValidMove(initX, initY, endX, endY, WHITE, blackKingPos)) {
-                    return false;
+                    return new MoveClassification(false);
                 }
-                Move(initX, initY, endX, endY);
-                this.enPassantPos = NO_TARGET;
-                this.activeColor = WHITE;
-                return true;
+                return new MoveClassification(true);
             } else if(((initY + 2) == endY) && initY == 1) { //check blocks for double move and set enpassant
-                if(getPositionStatus(endX - 1, endY - 1) != null || getPositionStatus(endX, endY) != null ||
+                if(getPositionStatus(endX, endY - 1) != null || getPositionStatus(endX, endY) != null ||
                         !IsValidMove(initX, initY, endX, endY, WHITE, blackKingPos)) {
-                    return false;
+                    return new MoveClassification(false);
                 }
-                Move(initX, initY, endX, endY);
-                this.enPassantPos = new Pair<>(endX, endY - 1);
-                this.activeColor = WHITE;
-                return true;
+                return new MoveClassification(new Pair<>(endX, endY - 1));
             }
         } else if((initY + 1) == endY) {
             if((initX - 1) == endX || (initX + 1) == endX) { //check for valid capture on left or right or enpassant
                 if(getPositionStatus(endX, endY) == null) {
                     if(enPassantPos.getKey() == endX && enPassantPos.getValue() == endY && IsValidMove(initX, initY, endX, endY, WHITE, blackKingPos)) {
-                        Move(initX, initY, endX, endY);
-                        this.chessBoard[endY - 1][endX] = null;
-                        this.enPassantPos = NO_TARGET;
-                        this.activeColor = WHITE;
-                        return true;
+                        return new MoveClassification(new Pair<>(endX, endY - 1), getPositionStatus(endX, endY - 1));
                     }
                 } else if(getPositionStatus(endX, endY).getColor() == WHITE && IsValidMove(initX, initY, endX, endY, WHITE, blackKingPos)) {
-                    Move(initX, initY, endX, endY);
-                    this.enPassantPos = NO_TARGET;
-                    this.activeColor = WHITE;
-                    return true;
+                    return new MoveClassification(getPositionStatus(endX, endY));
                 }
             }
         }
-        return false;
+        return new MoveClassification(false);
     }
 
     private void Move(int initX, int initY, int endX, int endY) {
@@ -998,5 +1021,45 @@ public class ChessBoard implements IChessBoard{
     @Override
     public List<Pair<Integer, Integer>> FindValidMoves(int x, int y) {
         return null;
+    }
+
+    private static class MoveClassification {
+        private boolean validMove;
+        private Pair<Integer, Integer> enPassantTarget;
+        private Pair<Integer, Integer> enPassantCapture;
+        private Castling castle;
+        private Piece pieceCaptured;
+
+        private MoveClassification(boolean valid, Pair<Integer, Integer> target,
+                                   Pair<Integer, Integer> enPassantCapture, Piece pieceCapture, Castling castle) {
+            this.validMove = valid;
+            this.enPassantTarget = target;
+            this.enPassantCapture = enPassantCapture;
+            this.pieceCaptured = pieceCapture;
+            this.castle = castle;
+        }
+        private MoveClassification(boolean valid) {
+            this(valid, NO_TARGET, NO_TARGET, null, NO_CASTLE);
+        }
+
+        private MoveClassification(Piece piece) {
+            this(true, NO_TARGET, NO_TARGET, piece, NO_CASTLE);
+        }
+
+        private MoveClassification(Pair<Integer, Integer> target) {
+            this(true, target, NO_TARGET, null, NO_CASTLE);
+        }
+
+        private MoveClassification(Pair<Integer, Integer> enPassantCapture, Piece piece) {
+            this(true, NO_TARGET, enPassantCapture, piece, NO_CASTLE);
+        }
+
+        private MoveClassification(Castling castle) {
+            this(true, NO_TARGET, NO_TARGET, null, castle);
+        }
+
+        private MoveClassification(Piece pieceCaptured, Castling castle) {
+            this(true, NO_TARGET, NO_TARGET, pieceCaptured, castle);
+        }
     }
 }

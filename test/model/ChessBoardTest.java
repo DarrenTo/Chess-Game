@@ -1,9 +1,13 @@
 package model;
 
+import javafx.util.Pair;
 import model.enums.CheckStatus;
 import model.pieces.Knight;
 import model.pieces.*;
 import org.junit.jupiter.api.*;
+
+import java.util.ArrayList;
+import java.util.List;
 
 import static model.enums.CheckStatus.*;
 import static model.enums.Color.BLACK;
@@ -891,9 +895,19 @@ public class ChessBoardTest {
         @Test
         @DisplayName("Valid En Passant; Right")
         void PawnEnPassant() {
-            board.FENSetup("rnbqkbnr/pppp1ppp/8/3Pp3/8/8/PPP1PPPP/RNBQKBNR w KQkq e6 0 1");
+            board.FENSetup("rnbqkbnr/pppp2pp/8/3Ppp2/8/8/PPP1PPPP/RNBQKBNR w KQkq e6 0 1");
             assertValidMove(3, 3, 4, 2);
             assertEqualPieces(board.getPositionStatus(4, 3), null);
+            assertValidMove(5,3,5,4);
+            assertValidMove(6,6,6,4);
+            assertValidMove(5,4,6,5);
+            assertEqualPieces(board.getPositionStatus(6,4), null);
+            assertValidMove(2,6,2,4);
+            assertValidMove(0,1,0,2);
+            assertValidMove(2,4,2,3);
+            assertValidMove(1,1,1,3);
+            assertValidMove(2,3,1,2);
+            assertEqualPieces(board.getPositionStatus(1,3), null);
         }
 
         @Test
@@ -1270,6 +1284,249 @@ public class ChessBoardTest {
             assertFalse(board.MovePiece(4,0,2,0));
             assertValidMove(4,0,5,0);
         }
+    }
+
+    @Nested
+    @DisplayName("ValidMoves")
+    class ValidMovesTest {
+        List<Pair<Integer, Integer>> list;
+
+        @BeforeEach
+        void BeforeEach() {
+            list = new ArrayList<>();
+        }
+
+        @Test
+        @DisplayName("Starting position valid moves")
+        void ValidMovesStartPosition() {
+            board.FENSetup("rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1");
+            list.add(new Pair<>(0,5));
+            list.add(new Pair<>(0,4));
+            assertEqualMoveList(board.FindValidMoves(0,6), list);
+            list.clear();
+            assertEqualMoveList(board.FindValidMoves(0,7), list);
+            assertEqualMoveList(board.FindValidMoves(7,7), list);
+            assertEqualMoveList(board.FindValidMoves(2,7), list);
+            assertEqualMoveList(board.FindValidMoves(5,7), list);
+            assertEqualMoveList(board.FindValidMoves(3,7), list);
+            assertEqualMoveList(board.FindValidMoves(4, 7), list);
+            assertEqualMoveList(board.FindValidMoves(0,1), list);
+            list.add(new Pair<>(0,5));
+            list.add(new Pair<>(2,5));
+            assertEqualMoveList(board.FindValidMoves(1,7), list);
+            list.clear();
+            list.add(new Pair<>(5,5));
+            list.add(new Pair<>(7, 5));
+            assertEqualMoveList(board.FindValidMoves(6,7), list);
+            assertValidMove(0,6,0,5);
+            list.clear();
+            assertEqualMoveList(board.FindValidMoves(0,0), list);
+            assertEqualMoveList(board.FindValidMoves(7,0), list);
+            assertEqualMoveList(board.FindValidMoves(2,0), list);
+            assertEqualMoveList(board.FindValidMoves(5,0), list);
+            assertEqualMoveList(board.FindValidMoves(3,0), list);
+            assertEqualMoveList(board.FindValidMoves(4,0), list);
+            assertEqualMoveList(board.FindValidMoves(0,6), list);
+            list.add(new Pair<>(0,2));
+            list.add(new Pair<>(2,2));
+            assertEqualMoveList(board.FindValidMoves(2,0), list);
+            list.clear();
+            list.add(new Pair<>(7,2));
+            list.add(new Pair<>(5,2));
+            assertEqualMoveList(board.FindValidMoves(6,0), list);
+            list.clear();
+            list.add(new Pair<>(0,2));
+            list.add(new Pair<>(0,3));
+            assertEqualMoveList(board.FindValidMoves(0,1), list);
+        }
+
+        @Test
+        @DisplayName("Misc Position")
+        void MiscPositionNoCheck() {
+            board.FENSetup("r3k2r/p1pbpbp1/3pn1n1/1pP1Pp1p/2QN2P1/R4B2/2PP1P1P/4K2R w Kkq b6 0 1");
+            for(int i = 1; i < 8; i++) {
+                if(i != 5) {
+                    list.add(new Pair<>(0,i));
+                }
+            }
+            for(int i = 1; i < 5; i++) {
+                list.add(new Pair<>(i,5));
+            }
+            assertEqualMoveList(board.FindValidMoves(0,5), list);
+            list.clear();
+
+            list.add(new Pair<>(1,3));
+            list.add(new Pair<>(0,6));
+            list.add(new Pair<>(1,5));
+            list.add(new Pair<>(3,3));
+            list.add(new Pair<>(4,2));
+            list.add(new Pair<>(3,5));
+            list.add(new Pair<>(4,6));
+            list.add(new Pair<>(5,7));
+            list.add(new Pair<>(0,4));
+            list.add(new Pair<>(1,4));
+            list.add(new Pair<>(2,5));
+            assertEqualMoveList(board.FindValidMoves(2,4), list);
+            list.clear();
+
+            list.add(new Pair<>(1,3));
+            list.add(new Pair<>(2,2));
+            list.add(new Pair<>(4,2));
+            list.add(new Pair<>(5,3));
+            list.add(new Pair<>(4,6));
+            list.add(new Pair<>(1,5));
+            assertEqualMoveList(board.FindValidMoves(3,4), list);
+            list.clear();
+
+            list.add(new Pair<>(3,7));
+            list.add(new Pair<>(4,6));
+            list.add(new Pair<>(5,7));
+            list.add(new Pair<>(6,7));
+            assertEqualMoveList(board.FindValidMoves(4,7), list);
+            list.clear();
+
+            for(int i = 0; i < 7; i++) {
+                if(i != 5) {
+                    list.add(new Pair<>(i,i));
+                }
+            }
+            list.add(new Pair<>(3,7));
+            list.add(new Pair<>(4,6));
+            assertEqualMoveList(board.FindValidMoves(5,5), list);
+            list.clear();
+
+            list.add(new Pair<>(6,7));
+            list.add(new Pair<>(5,7));
+            assertEqualMoveList(board.FindValidMoves(7,7), list);
+            list.clear();
+
+            list.add(new Pair<>(1,2));
+            list.add(new Pair<>(3,2));
+            list.add(new Pair<>(2,2));
+            assertEqualMoveList(board.FindValidMoves(2,3), list);
+            list.clear();
+
+            list.add(new Pair<>(3,2));
+            assertEqualMoveList(board.FindValidMoves(4,3), list);
+            list.clear();
+
+            list.add(new Pair<>(5,3));
+            list.add(new Pair<>(6,3));
+            list.add(new Pair<>(7,3));
+            assertEqualMoveList(board.FindValidMoves(6,4), list);
+            list.clear();
+
+            list.add(new Pair<>(2,5));
+            assertEqualMoveList(board.FindValidMoves(2,6), list);
+            list.clear();
+
+            assertValidMove(7,6,7,5);
+
+            list.add(new Pair<>(1,0));
+            list.add(new Pair<>(2,0));
+            list.add(new Pair<>(3,0));
+            assertEqualMoveList(board.FindValidMoves(0,0), list);
+            list.clear();
+
+            list.add(new Pair<>(2,0));
+            list.add(new Pair<>(2,2));
+            assertEqualMoveList(board.FindValidMoves(3,1), list);
+            list.clear();
+
+            list.add(new Pair<>(2,0));
+            list.add(new Pair<>(3,0));
+            list.add(new Pair<>(5,0));
+            list.add(new Pair<>(6,0));
+            assertEqualMoveList(board.FindValidMoves(4,0), list);
+            list.clear();
+
+            list.add(new Pair<>(4,3));
+            list.add(new Pair<>(5,4));
+            list.add(new Pair<>(7,4));
+            list.add(new Pair<>(5,0));
+            assertEqualMoveList(board.FindValidMoves(6,2), list);
+            list.clear();
+
+            list.add(new Pair<>(5,4));
+            list.add(new Pair<>(6,4));
+            assertEqualMoveList(board.FindValidMoves(5,3), list);
+            list.clear();
+
+            assertEqualMoveList(board.FindValidMoves(4,1), list);
+        }
+
+        @Test
+        @DisplayName("In Check Position; White")
+        void WhiteInCheck() {
+            board.FENSetup("rnb1kbnr/ppp1pppp/3p4/1Q2q1BB/8/2N2P2/PPPP2PP/R3K2R w KQkq - 0 1");
+
+            list.add(new Pair<>(4,6));
+            list.add(new Pair<>(4,3));
+            assertEqualMoveList(board.FindValidMoves(1,3), list);
+            list.clear();
+
+            list.add(new Pair<>(4,6));
+            list.add(new Pair<>(4,4));
+            assertEqualMoveList(board.FindValidMoves(2,5), list);
+            list.clear();
+
+            list.add(new Pair<>(4,5));
+            assertEqualMoveList(board.FindValidMoves(6,3), list);
+            list.clear();
+
+            list.add(new Pair<>(3,7));
+            list.add(new Pair<>(5,7));
+            list.add(new Pair<>(5,6));
+            assertEqualMoveList(board.FindValidMoves(4,7), list);
+            list.clear();
+
+            assertEqualMoveList(board.FindValidMoves(0,7), list);
+            assertEqualMoveList(board.FindValidMoves(7,3), list);
+        }
+
+        @Test
+        @DisplayName("In Check Position; Black")
+        void BlackInCheck() {
+            board.FENSetup("r1bq1bnr/ppkp1pp1/n1p5/8/6Pp/7P/PPPPPP1B/RN1QKBNR b KQ g3 0 1");
+
+            list.add(new Pair<>(6,5));
+            assertEqualMoveList(board.FindValidMoves(7,4), list);
+            list.clear();
+
+            list.add(new Pair<>(3,2));
+            assertEqualMoveList(board.FindValidMoves(3,1), list);
+            assertEqualMoveList(board.FindValidMoves(5,0), list);
+            list.clear();
+
+            list.add(new Pair<>(1,2));
+            assertEqualMoveList(board.FindValidMoves(2,1), list);
+            list.clear();
+
+            assertEqualMoveList(board.FindValidMoves(0,0), list);
+            assertEqualMoveList(board.FindValidMoves(0,2), list);
+        }
+    }
+
+
+
+    void assertEqualMoveList(List<Pair<Integer, Integer>> list1, List<Pair<Integer, Integer>> list2){
+        for(Pair<Integer, Integer> pos : list1) {
+            assertTrue(containsPos(list2, pos));
+        }
+        assertEquals(list1.size(), list2.size());
+    }
+
+    boolean containsPos(List<Pair<Integer, Integer>> list, Pair<Integer, Integer> pos) {
+        for(Pair<Integer, Integer> pos2 : list) {
+            if(equalPos(pos, pos2)) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    boolean equalPos(Pair<Integer, Integer> pos1, Pair<Integer, Integer> pos2) {
+        return pos1.getKey() == pos2.getKey() && pos1.getValue() == pos2.getValue();
     }
 
     void assertValidMove(int initX, int initY, int endX, int endY) {
