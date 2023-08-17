@@ -1329,7 +1329,7 @@ public class ChessBoardTest {
             assertEqualMoveList(board.FindValidMoves(0,6), list);
             list.add(new Pair<>(0,2));
             list.add(new Pair<>(2,2));
-            assertEqualMoveList(board.FindValidMoves(2,0), list);
+            assertEqualMoveList(board.FindValidMoves(1,0), list);
             list.clear();
             list.add(new Pair<>(7,2));
             list.add(new Pair<>(5,2));
@@ -1458,7 +1458,7 @@ public class ChessBoardTest {
         @Test
         @DisplayName("In Check Position; White")
         void WhiteInCheck() {
-            board.FENSetup("rnb1kbnr/ppp1pppp/3p4/1Q2q1BB/8/2N2P2/PPPP2PP/R3K2R w KQkq - 0 1");
+            board.FENSetup("rnb1kbnr/pppppppp/8/1Q2q1BB/8/2N2P2/PPPP2PP/R3K2R w KQkq - 0 1");
 
             list.add(new Pair<>(4,6));
             list.add(new Pair<>(4,3));

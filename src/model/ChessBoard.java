@@ -1020,7 +1020,140 @@ public class ChessBoard implements IChessBoard{
     }
     @Override
     public List<Pair<Integer, Integer>> FindValidMoves(int x, int y) {
-        return null;
+        List<Pair<Integer, Integer>> list = new ArrayList<>();
+        Piece piece = getPositionStatus(x, y);
+        if(piece == null || piece.getColor() != activeColor) {
+            return list;
+        }
+
+        switch(piece.getName()) {
+            case PAWN:
+                return PawnValidMoves(x, y);
+            case KING:
+                return KingValidMoves(x, y);
+            case QUEEN:
+                return QueenValidMoves(x, y);
+            case BISHOP:
+                return BishopValidMoves(x, y);
+            case KNIGHT:
+                return KnightValidMoves(x, y);
+            case ROOK:
+                return RookValidMoves(x, y);
+            default:
+                return list;
+        }
+    }
+
+    private List<Pair<Integer, Integer>> PawnValidMoves(int x, int y) {
+        List<Pair<Integer, Integer>> list = new ArrayList<>();
+
+        if(activeColor == WHITE) {
+            for(int i = -1; i < 2; i++) {
+                if(WhitePawnMove(x, y, x + i, y - 1).validMove) {
+                    list.add(new Pair<>(x + i, y - 1));
+                }
+            }
+            if(WhitePawnMove(x, y, x, y - 2).validMove) {
+                list.add(new Pair<>(x, y - 2));
+            }
+        } else {
+            for(int i = -1; i < 2; i++) {
+                if(BlackPawnMove(x, y, x + i, y + 1).validMove) {
+                    list.add(new Pair<>(x + i, y + 1));
+                }
+            }
+            if(BlackPawnMove(x, y, x, y + 2).validMove) {
+                list.add(new Pair<>(x, y + 2));
+            }
+        }
+        return list;
+    }
+
+    private List<Pair<Integer, Integer>> KingValidMoves(int x, int y) {
+        List<Pair<Integer, Integer>> list = new ArrayList<>();
+        int dx;
+        int dy;
+        CheckStatus status = FindCheckStatus();
+        for(Direction dir: Direction.values()) {
+            dx = dir.dir.getKey();
+            dy = dir.dir.getValue();
+            if(KingMove(x, y, x + dx, y + dy, status).validMove) {
+                list.add(new Pair<>(x + dx, y + dy));
+            }
+        }
+
+        if(status == CheckStatus.NOT_IN_CHECK) {
+            if(KingMove(x, y, x - 2, y, status).validMove) {
+                list.add(new Pair<>(x - 2, y));
+            }
+            if(KingMove(x, y, x + 2, y, status).validMove) {
+                list.add(new Pair<>(x + 2, y));
+            }
+        }
+
+        return list;
+    }
+
+    private List<Pair<Integer, Integer>> QueenValidMoves(int x, int y) {
+        List<Pair<Integer, Integer>> list = new ArrayList<>();
+        list.addAll(RookValidMoves(x, y));
+        list.addAll(BishopValidMoves(x, y));
+        return list;
+    }
+
+    private List<Pair<Integer, Integer>> BishopValidMoves(int x, int y) {
+        List<Pair<Integer, Integer>> list = new ArrayList<>();
+        list.addAll(BishopDiagonalValidMoveCheck(x, y, Direction.UP_RIGHT_DIAGONAL));
+        list.addAll(BishopDiagonalValidMoveCheck(x, y, Direction.UP_LEFT_DIAGONAL));
+        list.addAll(BishopDiagonalValidMoveCheck(x, y, Direction.DOWN_RIGHT_DIAGONAL));
+        list.addAll(BishopDiagonalValidMoveCheck(x, y, Direction.DOWN_LEFT_DIAGONAL));
+
+        return list;
+    }
+
+    private List<Pair<Integer, Integer>> BishopDiagonalValidMoveCheck(int x, int y, Direction dir) {
+        List<Pair<Integer, Integer>> list = new ArrayList<>();
+        int dx = dir.dir.getKey();
+        int dy = dir.dir.getValue();
+        int endX = x + dx;
+        int endY = y + dy;
+        while(endX > -1 && endX < 8 && endY > -1 && endY < 8) {
+            if(BishopMove(x, y, endX, endY).validMove) {
+                list.add(new Pair<>(endX, endY));
+            }
+            endX += dx;
+            endY += dy;
+        }
+
+        return list;
+    }
+
+    private List<Pair<Integer, Integer>> RookValidMoves(int x, int y) {
+        List<Pair<Integer, Integer>> list = new ArrayList<>();
+        for(int i = 0; i < 8; i++) {
+            if(RookMove(x,y,i,y).validMove && x != i) {
+                list.add(new Pair<>(i, y));
+            }
+            if(RookMove(x,y,x,i).validMove && y != i) {
+                list.add(new Pair<>(x, i));
+            }
+        }
+        return list;
+    }
+
+    private List<Pair<Integer, Integer>> KnightValidMoves(int x, int y) {
+        List<Pair<Integer, Integer>> list = new ArrayList<>();
+        int dx;
+        int dy;
+        for(KnightDirections knightDir: KnightDirections.values()) {
+            dx = knightDir.dir.getKey();
+            dy = knightDir.dir.getValue();
+            if(KnightMove(x, y, x + dx, y + dy).validMove) {
+                list.add(new Pair<>(x + dx, y + dy));
+            }
+        }
+
+        return list;
     }
 
     private static class MoveClassification {
