@@ -1284,6 +1284,21 @@ public class ChessBoardTest {
             assertFalse(board.MovePiece(4,0,2,0));
             assertValidMove(4,0,5,0);
         }
+
+        @Test
+        @DisplayName("Misc")
+        void MiscMoveCheck() {
+            assertValidMove(4, 6, 4, 4);
+            assertValidMove(3, 1, 3, 3);
+            assertValidMove(1, 7, 2, 5);
+            assertValidMove(3, 3, 4, 4);
+            assertValidMove(2, 5, 4, 4);
+            assertValidMove(3, 0, 3, 2);
+            assertValidMove(4, 4, 3, 2);
+            assertValidMove(4, 0, 3, 0);
+            assertValidMove(3, 7, 4, 6);
+            assertValidMove(2, 1, 2, 2);
+        }
     }
 
     @Nested

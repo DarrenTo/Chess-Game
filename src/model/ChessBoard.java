@@ -726,6 +726,13 @@ public class ChessBoard implements IChessBoard{
             InvalidateCastling(validMove.castle, endX, endY);
         }
 
+        if(piece.getName() == KING) {
+            if(activeColor == WHITE) {
+                whiteKingPos = new Pair<>(endX, endY);
+            } else {
+                blackKingPos = new Pair<>(endX, endY);
+            }
+        }
         if(piece.getName() != PAWN || validMove.pieceCaptured == null) {
             halfmoveClock++;
         }
@@ -1042,6 +1049,16 @@ public class ChessBoard implements IChessBoard{
             default:
                 return list;
         }
+    }
+
+    @Override
+    public Piece[][] getBoard() {
+        return this.chessBoard;
+    }
+
+    @Override
+    public Color getActiveColor() {
+        return activeColor;
     }
 
     private List<Pair<Integer, Integer>> PawnValidMoves(int x, int y) {

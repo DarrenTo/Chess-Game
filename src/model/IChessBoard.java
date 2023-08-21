@@ -2,6 +2,7 @@ package model;
 
 import javafx.util.Pair;
 import model.enums.CheckStatus;
+import model.enums.Color;
 import model.pieces.Piece;
 
 import java.util.List;
@@ -128,5 +129,18 @@ public interface IChessBoard {
      * The list should be empty if no valid moves
      */
     List<Pair<Integer, Integer>> FindValidMoves(int x, int y);
+
+
+    /**
+     *
+     * @return chessboard array
+     */
+    Piece[][] getBoard();
+
+    /**
+     *
+     * @return Active turn's color
+     */
+    Color getActiveColor();
 
 }
