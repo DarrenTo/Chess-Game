@@ -80,11 +80,8 @@ public class Main extends Application{
         chessPieces.addEventHandler(MOUSE_CLICKED, event -> {
             int x = (int)event.getX()/50;
             int y = (int)event.getY()/50;
-            CheckStatus status = board.FindCheckStatus();
-            if(status == CheckStatus.CHECKMATE) {
-                GameOverScreen();
-            }
-            System.out.println("checkstatus done: " + status);
+            CheckStatus status;
+
             if(selected) {
               if(board.MovePiece(selectedX, selectedY, x, y)) {
                   System.out.println("successful move from [" + selectedX + ", " + selectedY + "] to [" + x + ", " + y + "]");
@@ -102,6 +99,14 @@ public class Main extends Application{
                     System.out.println("Selected\nX: " + (int) event.getX() / 50
                             + "\nY: " + (int) event.getY() / 50);
                 }
+            }
+
+            status = board.FindCheckStatus();
+            System.out.println("checkstatus done: " + status);
+            if(status == CheckStatus.CHECKMATE) {
+                GameOverScreen();
+            } else if(status == CheckStatus.STALEMATE) {
+                DrawScreen();
             }
 
         });
@@ -259,6 +264,18 @@ public class Main extends Application{
         GameOverWindow.setScene(GameOverScene);
 
         GameOverWindow.show();
+    }
+
+    private void DrawScreen() {
+        Label label = new Label("It's a Draw");
+        StackPane pane = new StackPane();
+        pane.getChildren().add(label);
+        Scene DrawScene = new Scene(pane, 250,250);
+
+        Stage DrawWindow = new Stage();
+        DrawWindow.setScene(DrawScene);
+
+        DrawWindow.show();
     }
 
 

@@ -6,12 +6,17 @@ import model.pieces.*;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Objects;
 
 import static model.enums.Castling.*;
+import static model.enums.CheckStatus.NOT_IN_CHECK;
+import static model.enums.CheckStatus.STALEMATE;
 import static model.enums.Color.*;
 import static model.enums.PieceName.*;
 
+
+//TODO pawn promotion
+//TODO Draw by repetition
+//TODO Draw by 50 move rule
 public class ChessBoard implements IChessBoard{
     protected Piece[][] chessBoard;
     private Color activeColor;
@@ -500,12 +505,67 @@ public class ChessBoard implements IChessBoard{
 
     @Override
     public CheckStatus FindCheckStatus() {
+        CheckStatus status;
 //        List<Pair<Integer, Integer>> kingPos = activeColor == WHITE ? whiteKingPos : blackKingPos;
 //        if(kingPos.size() == 1) {
 //            return FindCheckSingle(kingPos.get(0));
 //        }
 //        return FindCheckMulti(kingPos);
-        return FindCheckSingle(activeColor == WHITE ? whiteKingPos : blackKingPos, activeColor == WHITE ? BLACK : WHITE);
+        status = FindCheckSingle(activeColor == WHITE ? whiteKingPos : blackKingPos, activeColor == WHITE ? BLACK : WHITE);
+
+        if(status == NOT_IN_CHECK && IsStalemate()) {
+            return STALEMATE;
+        }
+
+        return status;
+    }
+
+    private boolean IsStalemate() {
+        for(int y = 0; y < 8; y++) {
+            for(int x = 0; x < 8; x++) {
+                Piece piece = getPositionStatus(x, y);
+                if(piece != null && piece.getColor() == activeColor && !FindValidMoves(x,y).isEmpty()) {
+                    return InsufficientPiecesForCheckmate();
+                }
+            }
+        }
+        return true;
+    }
+
+    private boolean InsufficientPiecesForCheckmate() {
+        List<Piece> pieces = GetActivePieces();
+        int blackBishopKnightCount = 0;
+        int whiteBishopKnightCount = 0;
+
+        for(Piece piece : pieces) {
+            if(piece.getName() == QUEEN || piece.getName() == ROOK) {
+                return false;
+            }
+            if(piece.getName() == BISHOP || piece.getName() == KNIGHT) {
+                if(piece.getColor() == WHITE) {
+                    whiteBishopKnightCount++;
+                } else {
+                    blackBishopKnightCount++;
+                }
+            }
+        }
+
+
+        return whiteBishopKnightCount < 2 && blackBishopKnightCount == 0 ||
+                whiteBishopKnightCount == 0 && blackBishopKnightCount < 2;
+    }
+
+    private List<Piece> GetActivePieces() {
+        List<Piece> pieces = new ArrayList<>();
+        for(int y = 0; y < 8; y++) {
+            for(int x = 0; x < 8; x++) {
+                Piece piece = getPositionStatus(x, y);
+                if(piece != null) {
+                    pieces.add(piece);
+                }
+            }
+        }
+        return pieces;
     }
 
     private CheckStatus FindCheckSingle(Pair<Integer, Integer> pos, Color attackColor) {
@@ -515,7 +575,7 @@ public class ChessBoard implements IChessBoard{
             }
             return CheckStatus.CHECKMATE;
         }
-        return CheckStatus.NOT_IN_CHECK;
+        return NOT_IN_CHECK;
     }
 
 //    private CheckStatus FindCheckMulti(List<Pair<Integer, Integer>> kingPos) {
@@ -1090,7 +1150,8 @@ public class ChessBoard implements IChessBoard{
         List<Pair<Integer, Integer>> list = new ArrayList<>();
         int dx;
         int dy;
-        CheckStatus status = FindCheckStatus();
+        //FindCheckMulti();
+        CheckStatus status = FindCheckSingle(new Pair<>(x, y), getAttackColor());
         for(Direction dir: Direction.values()) {
             dx = dir.dir.getKey();
             dy = dir.dir.getValue();
@@ -1099,7 +1160,7 @@ public class ChessBoard implements IChessBoard{
             }
         }
 
-        if(status == CheckStatus.NOT_IN_CHECK) {
+        if(status == NOT_IN_CHECK) {
             if(KingMove(x, y, x - 2, y, status).validMove) {
                 list.add(new Pair<>(x - 2, y));
             }

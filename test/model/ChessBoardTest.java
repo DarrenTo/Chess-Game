@@ -837,6 +837,55 @@ public class ChessBoardTest {
                 board.FENSetup("1k6/8/8/8/7r/8/4nPPK/8 w - - 0 1");
                 assertCheckmate();
             }
+
+            @Test
+            @DisplayName("Stalemate, White")
+            void Stalemate() {
+                board.FENSetup("4k3/8/8/8/8/8/5q2/7K w - - 0 1");
+                assertStalemate();
+                board.FENSetup("7K/5k1P/8/8/8/8/8/8 w - - 0 1");
+                assertStalemate();
+                board.FENSetup("2k4K/7P/8/8/8/8/6q1/8 w - - 0 1");
+                assertStalemate();
+                board.FENSetup("7K/2k2qPP/8/8/3b4/8/8/8 w - - 0 1");
+                assertStalemate();
+                board.FENSetup("7K/2k2qRP/8/8/3b4/8/8/8 w - - 0 1");
+                assertStalemate();
+                board.FENSetup("8/8/8/8/8/2q1k3/8/3K4 w - - 0 1");
+                assertStalemate();
+                board.FENSetup("8/8/8/8/8/7k/4n3/7K w - - 0 1");
+                assertStalemate();
+            }
+            
+            @Test
+            @DisplayName("Stalemate, Black")
+            void Stalemate2() {
+                board.FENSetup("8/6Q1/8/8/8/8/3K3p/7k b - - 0 1");
+                assertStalemate();
+                board.FENSetup("8/8/8/8/8/8/5K1p/7k b - - 0 1");
+                assertStalemate();
+                board.FENSetup("8/8/8/8/8/2Q2K2/8/3k4 b - - 0 1");
+                assertStalemate();
+            }
+
+            @Test
+            @DisplayName("Draw Insuffucient Pieces")
+            void Draw() {
+                board.FENSetup("8/8/5N2/8/8/5K2/1k6/8 w - - 0 1");
+                assertStalemate();
+                board.FENSetup("8/8/8/5B2/8/5K2/1k6/8 w - - 0 1");
+                assertStalemate();
+                board.FENSetup("8/8/8/8/1n6/5K2/1k6/8 w - - 0 1");
+                assertStalemate();
+                board.FENSetup("8/8/8/8/2b5/5K2/1k6/8 w - - 0 1");
+                assertStalemate();
+                board.FENSetup("8/8/8/8/1n3N2/5K2/1k6/8 w - - 0 1");
+                assertNoCheck();
+                board.FENSetup("8/8/8/8/1b3N2/5K2/1k6/8 w - - 0 1");
+                assertNoCheck();
+                board.FENSetup("8/8/8/5B2/1b6/5K2/1k6/8 w - - 0 1");
+                assertNoCheck();
+            }
         }
 
         @Nested
@@ -1571,5 +1620,7 @@ public class ChessBoardTest {
     void assertNoCheck() {
         assertEquals(board.FindCheckStatus(), NOT_IN_CHECK);
     }
+
+    void assertStalemate() { assertEquals(board.FindCheckStatus(), STALEMATE);}
 
 }
