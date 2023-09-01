@@ -14,7 +14,6 @@ import static model.enums.Color.*;
 import static model.enums.PieceName.*;
 
 
-//TODO pawn promotion
 //TODO Draw by repetition
 //TODO Draw by 50 move rule
 public class ChessBoard implements IChessBoard{
@@ -731,6 +730,11 @@ public class ChessBoard implements IChessBoard{
 
     @Override
     public boolean MovePiece(int initX, int initY, int endX, int endY) {
+        return MovePiece(initX, initY, endX, endY, null);
+    }
+
+    @Override
+    public boolean MovePiece(int initX, int initY, int endX, int endY, PieceName name) {
         Piece piece = getPositionStatus(initX, initY);
         CheckStatus status = FindCheckStatus();
         if(piece == null || piece.getColor() != activeColor || status == CheckStatus.CHECKMATE || (initX == endX && initY == endY)) {
@@ -770,6 +774,10 @@ public class ChessBoard implements IChessBoard{
         Move(initX, initY, endX, endY);
         this.enPassantPos = validMove.enPassantTarget;
 
+        if(piece.getName() == PAWN && ((activeColor == WHITE && endY == 0) || (activeColor == BLACK && endY == 7))) {
+            PawnPromotion(endX, endY, name);
+        }
+
         if(validMove.enPassantCapture != NO_TARGET) {
             int x = validMove.enPassantCapture.getKey();
             int y = validMove.enPassantCapture.getValue();
@@ -777,11 +785,11 @@ public class ChessBoard implements IChessBoard{
         }
 
         if(validMove.pieceCaptured != null) {
-              if(activeColor == WHITE) {
-                  whiteCapturedPieces.add(validMove.pieceCaptured);
-              } else {
-                  blackCapturedPieces.add(validMove.pieceCaptured);
-              }
+            if(activeColor == WHITE) {
+                whiteCapturedPieces.add(validMove.pieceCaptured);
+            } else {
+                blackCapturedPieces.add(validMove.pieceCaptured);
+            }
         } else if(validMove.castle != NO_CASTLE) {
             InvalidateCastling(validMove.castle, endX, endY);
         }
@@ -805,7 +813,43 @@ public class ChessBoard implements IChessBoard{
         return true;
     }
 
-    public MoveClassification KingMove(int initX, int initY, int endX, int endY, CheckStatus status) {
+    private void PawnPromotion(int endX, int endY, PieceName name) {
+        if(endY == 0) {
+            switch(name) {
+                case QUEEN:
+                    this.chessBoard[endY][endX] = createPiece("Q");
+                    break;
+                case ROOK:
+                    this.chessBoard[endY][endX] = createPiece("R");
+                    break;
+                case BISHOP:
+                    this.chessBoard[endY][endX] = createPiece("B");
+                    break;
+                case KNIGHT:
+                    this.chessBoard[endY][endX] = createPiece("N");
+                    break;
+                default:
+            }
+        } else {
+            switch(name) {
+                case QUEEN:
+                    this.chessBoard[endY][endX] = createPiece("q");
+                    break;
+                case ROOK:
+                    this.chessBoard[endY][endX] = createPiece("r");
+                    break;
+                case BISHOP:
+                    this.chessBoard[endY][endX] = createPiece("b");
+                    break;
+                case KNIGHT:
+                    this.chessBoard[endY][endX] = createPiece("n");
+                    break;
+                default:
+            }
+        }
+    }
+
+    private MoveClassification KingMove(int initX, int initY, int endX, int endY, CheckStatus status) {
         int validX = Math.abs(initX - endX);
         int validY = Math.abs(initY - endY);
         if((validX == 1 || validX == 0) && (validY == 1 || validY == 0)) {
@@ -828,7 +872,7 @@ public class ChessBoard implements IChessBoard{
         return new MoveClassification(false);
     }
 
-    public MoveClassification Castling(int initX, int initY, int endX, int endY) {
+    private MoveClassification Castling(int initX, int initY, int endX, int endY) {
             if(endX == 6 && (activeColor == WHITE ? whiteKingSideCastle : blackKingSideCastle)) {
                 if(IsValidMove(initX, initY, endX, endY, getAttackColor(), new Pair<>(endX, endY)) &&
                         IsValidMove(initX, initY, endX - 1, endY, getAttackColor(), new Pair<>(endX - 1, endY))) {
@@ -847,7 +891,7 @@ public class ChessBoard implements IChessBoard{
         return new MoveClassification(false);
     }
 
-    public MoveClassification QueenMove(int initX, int initY, int endX, int endY) {
+    private MoveClassification QueenMove(int initX, int initY, int endX, int endY) {
         if(initX == endX || initY == endY) {
             return RookMove(initX, initY, endX, endY);
         } else if(Math.abs(initX - endX) == Math.abs(initY - endY)) {
@@ -856,7 +900,7 @@ public class ChessBoard implements IChessBoard{
         return new MoveClassification(false);
     }
 
-    public MoveClassification BishopMove(int initX, int initY, int endX, int endY) {
+    private MoveClassification BishopMove(int initX, int initY, int endX, int endY) {
         if(Math.abs(initX - endX) == Math.abs(initY - endY)) {
             Direction dir = BishopMoveDirection(initX, initY, endX, endY);
             for(int i = 1; i < Math.abs(initX - endX); i++) {
@@ -891,7 +935,7 @@ public class ChessBoard implements IChessBoard{
         }
     }
 
-    public MoveClassification KnightMove(int initX, int initY, int endX, int endY) {
+    private MoveClassification KnightMove(int initX, int initY, int endX, int endY) {
         if((Math.abs(initX - endX) == 2 && (Math.abs(initY - endY) == 1)) ||
                 (Math.abs(initX - endX) == 1 && Math.abs(initY - endY) == 2)) {
 
@@ -906,7 +950,7 @@ public class ChessBoard implements IChessBoard{
         return new MoveClassification(false);
     }
 
-    public MoveClassification RookMove(int initX, int initY, int endX, int endY) {
+    private MoveClassification RookMove(int initX, int initY, int endX, int endY) {
         if (initX == endX) {
             if (initY < endY) {
                 for (int i = initY + 1; i < endY; i++) {
@@ -1015,7 +1059,7 @@ public class ChessBoard implements IChessBoard{
         }
     }
 
-    public MoveClassification WhitePawnMove(int initX, int initY, int endX, int endY) {
+    private MoveClassification WhitePawnMove(int initX, int initY, int endX, int endY) {
         if(initX == endX) {
             if((initY - 1) == endY) { //check blocks for single move, set no enpassant
                 if(getPositionStatus(endX, endY) != null || !IsValidMove(initX, initY, endX, endY, BLACK, whiteKingPos)) {
@@ -1044,7 +1088,7 @@ public class ChessBoard implements IChessBoard{
         return new MoveClassification(false);
     }
 
-    public MoveClassification BlackPawnMove(int initX, int initY, int endX, int endY) {
+    private MoveClassification BlackPawnMove(int initX, int initY, int endX, int endY) {
         if(initX == endX) {
             if((initY + 1) == endY) { //check blocks for single move, set no enpassant, set turn
                 if(getPositionStatus(endX, endY) != null || !IsValidMove(initX, initY, endX, endY, WHITE, blackKingPos)) {

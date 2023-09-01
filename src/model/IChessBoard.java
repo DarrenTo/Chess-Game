@@ -3,6 +3,7 @@ package model;
 import javafx.util.Pair;
 import model.enums.CheckStatus;
 import model.enums.Color;
+import model.enums.PieceName;
 import model.pieces.Piece;
 
 import java.util.List;
@@ -118,6 +119,15 @@ public interface IChessBoard {
      * The board and piece should be updated upon a successful move
      */
     boolean MovePiece(int initX, int initY, int endX, int endY);
+
+    /**
+     *
+     * Move piece function for pawn promotion
+     *
+     * @param name Pawn promotion name
+     * @return boolean
+     */
+    boolean MovePiece(int initX, int initY, int endX, int endY, PieceName name);
 
     /**
      * Find all valid moves

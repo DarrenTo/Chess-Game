@@ -3,13 +3,16 @@ import javafx.scene.Node;
 import javafx.scene.Scene;
 import javafx.scene.control.Button;
 import javafx.scene.control.Label;
+import javafx.scene.control.TextField;
 import javafx.scene.image.ImageView;
+import javafx.scene.input.KeyCode;
 import javafx.scene.layout.*;
 import javafx.scene.paint.Color;
 import javafx.stage.Stage;
 import javafx.scene.shape.Rectangle;
 
 import javafx.scene.image.Image;
+import javafx.util.Pair;
 import model.ChessBoard;
 import model.IChessBoard;
 import model.enums.CheckStatus;
@@ -20,7 +23,9 @@ import java.io.FileNotFoundException;
 import java.io.InputStream;
 
 import static javafx.scene.input.MouseEvent.MOUSE_CLICKED;
+import static model.enums.Color.BLACK;
 import static model.enums.Color.WHITE;
+import static model.enums.PieceName.*;
 
 public class Main extends Application{
     Node[][] chessAnnotationNodes = new Node[8][8];
@@ -46,7 +51,7 @@ public class Main extends Application{
 
     int selectedX;
     int selectedY;
-    Button button;
+
     public static void main(String[] args) {
         launch(args);
     }
@@ -54,15 +59,17 @@ public class Main extends Application{
     @Override
     public void start(Stage primaryStage) throws Exception {
         primaryStage.setTitle("Chess Game");
-//        button = new Button();
-//        button.setText("Click me");
 
         BorderPane layout = new BorderPane();
         StackPane overlay = new StackPane();
         overlay.setMaxSize(400,400);
         overlay.setBorder(new Border(new BorderStroke(Color.BLACK, BorderStrokeStyle.SOLID, CornerRadii.EMPTY, new BorderWidths(2))));
         layout.setCenter(overlay);
-
+        StackPane rightMenu = new StackPane();
+        Button newGame = new Button("New Game");
+        newGame.setOnMouseClicked(event -> NewGameSetup());
+        rightMenu.getChildren().add(newGame);
+        layout.setRight(rightMenu);
 
         GridPane chessboard = new GridPane();
         setupChessboard(chessboard);
@@ -83,7 +90,11 @@ public class Main extends Application{
             CheckStatus status;
 
             if(selected) {
-              if(board.MovePiece(selectedX, selectedY, x, y)) {
+                if(board.getPositionStatus(selectedX, selectedY).getName() == PAWN && (y == 0 || y == 7)) {
+                    if(board.FindValidMoves(selectedX, selectedY).contains(new Pair<>(x, y))) {
+                        PawnPromotionChoice(selectedX, selectedY, x, y);
+                    }
+                } else if(board.MovePiece(selectedX, selectedY, x, y)) {
                   System.out.println("successful move from [" + selectedX + ", " + selectedY + "] to [" + x + ", " + y + "]");
 //                  DrawPieceMove(selectedX, selectedY, x, y);
                   setUpBoard();
@@ -111,7 +122,6 @@ public class Main extends Application{
 
         });
 
-//        layout.getChildren().add(button);
         Scene scene = new Scene(layout, 500, 500);
         primaryStage.setScene(scene);
         primaryStage.show();
@@ -254,6 +264,83 @@ public class Main extends Application{
         }
     }
 
+    private void PawnPromotionChoice(int initX, int initY, int endX, int endY) {
+        Label choice = new Label("Chose Piece: ");
+        Button queen = new Button("Queen");
+        Button rook = new Button("Rook");
+        Button bishop = new Button("Bishop");
+        Button knight = new Button("Knight");
+        VBox vbox = new VBox();
+        StackPane pane = new StackPane();
+        pane.getChildren().add(vbox);
+        vbox.getChildren().addAll(choice, queen, rook, bishop, knight);
+        Scene PawnPromoScene = new Scene(pane, 250,250);
+        Stage PromoWindow = new Stage();
+        PromoWindow.setScene(PawnPromoScene);
+
+        PromoWindow.show();
+
+        queen.setOnMouseClicked(event -> {
+            PromoWindow.hide();
+            board.MovePiece(initX, initY, endX, endY, QUEEN);
+            setUpBoard();
+        });
+
+        rook.setOnMouseClicked(event -> {
+            PromoWindow.hide();
+            board.MovePiece(initX, initY, endX, endY, ROOK);
+            setUpBoard();
+        });
+
+        bishop.setOnMouseClicked(event -> {
+            PromoWindow.hide();
+            board.MovePiece(initX, initY, endX, endY, BISHOP);
+            setUpBoard();
+        });
+
+        knight.setOnMouseClicked(event -> {
+            PromoWindow.hide();
+            board.MovePiece(initX, initY, endX, endY, KNIGHT);
+            setUpBoard();
+        });
+    }
+
+    private void NewGameSetup() {
+        Label label = new Label("Enter FEN code: ");
+        Label error = new Label("Invalid FEN code");
+        Button defaultNewGame = new Button("Default New Game");
+        VBox vbox = new VBox();
+        Stage newGameWindow = new Stage();
+        StackPane pane = new StackPane();
+
+        defaultNewGame.setOnMouseClicked(event -> {
+            board.FENSetup("rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1");
+            setUpBoard();
+            newGameWindow.hide();
+        });
+
+        TextField field = new TextField();
+
+        field.setOnKeyPressed(event -> {
+            if(event.getCode().equals(KeyCode.ENTER)) {
+                if(board.FENSetup(field.getText())) {
+                    setUpBoard();
+                    newGameWindow.hide();
+                } else if (!vbox.getChildren().contains(error)) {
+                    vbox.getChildren().add(error);
+                }
+            }
+        });
+
+        pane.getChildren().add(vbox);
+        vbox.getChildren().addAll(label, field, defaultNewGame);
+        Scene newGameScene = new Scene(pane, 250,250);
+
+        newGameWindow.setScene(newGameScene);
+
+        newGameWindow.show();
+    }
+
     private void GameOverScreen() {
         Label label = new Label("GAMEOVER: " + (board.getActiveColor() == WHITE ? "Black Wins" : "White Wins"));
         StackPane pane = new StackPane();
@@ -277,6 +364,8 @@ public class Main extends Application{
 
         DrawWindow.show();
     }
+
+
 
 
 }
