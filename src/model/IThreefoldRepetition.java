@@ -1,5 +1,6 @@
 package model;
 
+import model.enums.PieceName;
 import model.pieces.Piece;
 
 public interface IThreefoldRepetition {
@@ -14,9 +15,11 @@ public interface IThreefoldRepetition {
     /**
      * Log a move to keep track of potential threefold repetitions
      *
-     * @param piece The piece performing the move
-     * @param x     The x position of piece after it is moved
-     * @param y     The y position of piece after it is moved
+     * @param name      The name of the piece moved
+     * @param initX     The x position of piece before it is moved
+     * @param initY     The y position of piece before it is moved
+     * @param endX      The x position of piece after it is moved
+     * @param endY      The y position of piece after it is moved
      */
-    void LogMove(Piece piece, int x, int y);
+    void LogMove(PieceName name, int initX, int initY, int endX, int endY);
 }

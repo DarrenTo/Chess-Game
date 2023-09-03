@@ -23,6 +23,7 @@ import java.io.FileNotFoundException;
 import java.io.InputStream;
 
 import static javafx.scene.input.MouseEvent.MOUSE_CLICKED;
+import static model.enums.CheckStatus.STALEMATE;
 import static model.enums.Color.BLACK;
 import static model.enums.Color.WHITE;
 import static model.enums.PieceName.*;
@@ -116,8 +117,8 @@ public class Main extends Application{
             System.out.println("checkstatus done: " + status);
             if(status == CheckStatus.CHECKMATE) {
                 GameOverScreen();
-            } else if(status == CheckStatus.STALEMATE) {
-                DrawScreen();
+            } else if(status == STALEMATE || status == CheckStatus.DRAW) {
+                DrawScreen(status);
             }
 
         });
@@ -353,8 +354,8 @@ public class Main extends Application{
         GameOverWindow.show();
     }
 
-    private void DrawScreen() {
-        Label label = new Label("It's a Draw");
+    private void DrawScreen(CheckStatus status) {
+        Label label = new Label(status == STALEMATE ? "It's Stalemate" : "It's a Draw");
         StackPane pane = new StackPane();
         pane.getChildren().add(label);
         Scene DrawScene = new Scene(pane, 250,250);

@@ -8,14 +8,11 @@ import java.util.ArrayList;
 import java.util.List;
 
 import static model.enums.Castling.*;
-import static model.enums.CheckStatus.NOT_IN_CHECK;
-import static model.enums.CheckStatus.STALEMATE;
+import static model.enums.CheckStatus.*;
 import static model.enums.Color.*;
 import static model.enums.PieceName.*;
 
 
-//TODO Draw by repetition
-//TODO Draw by 50 move rule
 public class ChessBoard implements IChessBoard{
     protected Piece[][] chessBoard;
     private Color activeColor;
@@ -505,6 +502,9 @@ public class ChessBoard implements IChessBoard{
     @Override
     public CheckStatus FindCheckStatus() {
         CheckStatus status;
+        if(halfmoveClock >= 100 || threefoldRep.isThreefoldRepetition()) {
+            return DRAW;
+        }
 //        List<Pair<Integer, Integer>> kingPos = activeColor == WHITE ? whiteKingPos : blackKingPos;
 //        if(kingPos.size() == 1) {
 //            return FindCheckSingle(kingPos.get(0));
@@ -734,10 +734,12 @@ public class ChessBoard implements IChessBoard{
     }
 
     @Override
-    public boolean MovePiece(int initX, int initY, int endX, int endY, PieceName name) {
+    public boolean MovePiece(int initX, int initY, int endX, int endY, PieceName promoName) {
         Piece piece = getPositionStatus(initX, initY);
         CheckStatus status = FindCheckStatus();
-        if(piece == null || piece.getColor() != activeColor || status == CheckStatus.CHECKMATE || (initX == endX && initY == endY)) {
+        if(piece == null || piece.getColor() != activeColor ||
+                status == CHECKMATE || status == STALEMATE || status == DRAW ||
+                (initX == endX && initY == endY)) {
             return false;
         }
 
@@ -775,7 +777,7 @@ public class ChessBoard implements IChessBoard{
         this.enPassantPos = validMove.enPassantTarget;
 
         if(piece.getName() == PAWN && ((activeColor == WHITE && endY == 0) || (activeColor == BLACK && endY == 7))) {
-            PawnPromotion(endX, endY, name);
+            PawnPromotion(endX, endY, promoName);
         }
 
         if(validMove.enPassantCapture != NO_TARGET) {
@@ -803,12 +805,15 @@ public class ChessBoard implements IChessBoard{
         }
         if(piece.getName() != PAWN || validMove.pieceCaptured == null) {
             halfmoveClock++;
+        } else {
+            halfmoveClock = 0;
         }
 
         if(this.activeColor == BLACK) {
             fullmoveNumber++;
         }
 
+        threefoldRep.LogMove(piece.getName(), initX ,initY, endX, endY);
         this.activeColor = getAttackColor();
         return true;
     }
