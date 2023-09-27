@@ -1,8 +1,10 @@
 import javafx.application.Application;
+import javafx.geometry.Pos;
 import javafx.scene.Node;
 import javafx.scene.Scene;
 import javafx.scene.control.Button;
 import javafx.scene.control.Label;
+import javafx.scene.control.TextArea;
 import javafx.scene.control.TextField;
 import javafx.scene.image.ImageView;
 import javafx.scene.input.KeyCode;
@@ -53,6 +55,9 @@ public class Main extends Application{
     int selectedX;
     int selectedY;
 
+    Label turnNum;
+    Label turnColor;
+
     public static void main(String[] args) {
         launch(args);
     }
@@ -60,16 +65,22 @@ public class Main extends Application{
     @Override
     public void start(Stage primaryStage) throws Exception {
         primaryStage.setTitle("Chess Game");
-
+        InputStream stream = new FileInputStream("./data/WhiteKing.png");
+        primaryStage.getIcons().add(new Image(stream));
         BorderPane layout = new BorderPane();
         StackPane overlay = new StackPane();
         overlay.setMaxSize(400,400);
         overlay.setBorder(new Border(new BorderStroke(Color.BLACK, BorderStrokeStyle.SOLID, CornerRadii.EMPTY, new BorderWidths(2))));
         layout.setCenter(overlay);
         StackPane rightMenu = new StackPane();
+        turnColor = new Label((board.getActiveColor() == WHITE) ? "White's Turn" : "Black's Turn");
+        turnNum = new Label("Turn " + board.getTurnNumber());
         Button newGame = new Button("New Game");
         newGame.setOnMouseClicked(event -> NewGameSetup());
-        rightMenu.getChildren().add(newGame);
+        VBox rightMenuVBox = new VBox();
+        rightMenuVBox.getChildren().addAll(turnColor, turnNum, newGame);
+        rightMenu.getChildren().add(rightMenuVBox);
+        rightMenuVBox.setAlignment(Pos.CENTER);
         layout.setRight(rightMenu);
 
         GridPane chessboard = new GridPane();
@@ -212,6 +223,7 @@ public class Main extends Application{
                 drawPiece(piece, y, x);
             }
         }
+        UpdateTurnInfo();
     }
 
     private void drawPiece(Piece piece, int y, int x) {
@@ -312,6 +324,7 @@ public class Main extends Application{
         Button defaultNewGame = new Button("Default New Game");
         VBox vbox = new VBox();
         Stage newGameWindow = new Stage();
+        newGameWindow.getIcons().add(whiteKing);
         StackPane pane = new StackPane();
 
         defaultNewGame.setOnMouseClicked(event -> {
@@ -320,11 +333,12 @@ public class Main extends Application{
             newGameWindow.hide();
         });
 
-        TextField field = new TextField();
+        TextField textField = new TextField();
+        textField.setPrefColumnCount(10);
 
-        field.setOnKeyPressed(event -> {
+        textField.setOnKeyPressed(event -> {
             if(event.getCode().equals(KeyCode.ENTER)) {
-                if(board.FENSetup(field.getText())) {
+                if(board.FENSetup(textField.getText())) {
                     setUpBoard();
                     newGameWindow.hide();
                 } else if (!vbox.getChildren().contains(error)) {
@@ -334,7 +348,7 @@ public class Main extends Application{
         });
 
         pane.getChildren().add(vbox);
-        vbox.getChildren().addAll(label, field, defaultNewGame);
+        vbox.getChildren().addAll(label, textField, defaultNewGame);
         Scene newGameScene = new Scene(pane, 250,250);
 
         newGameWindow.setScene(newGameScene);
@@ -349,6 +363,7 @@ public class Main extends Application{
         Scene GameOverScene = new Scene(pane, 250,250);
 
         Stage GameOverWindow = new Stage();
+        GameOverWindow.getIcons().add(whiteKing);
         GameOverWindow.setScene(GameOverScene);
 
         GameOverWindow.show();
@@ -361,9 +376,15 @@ public class Main extends Application{
         Scene DrawScene = new Scene(pane, 250,250);
 
         Stage DrawWindow = new Stage();
+        DrawWindow.getIcons().add(whiteKing);
         DrawWindow.setScene(DrawScene);
 
         DrawWindow.show();
+    }
+
+    private void UpdateTurnInfo() {
+        turnColor.setText((board.getActiveColor() == WHITE) ? "White's Turn\n" : "Black's Turn\n");
+        turnNum.setText("Turn " + board.getTurnNumber());
     }
 
 

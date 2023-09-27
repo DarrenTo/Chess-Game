@@ -1167,7 +1167,12 @@ public class ChessBoard implements IChessBoard{
 
     @Override
     public Color getActiveColor() {
-        return activeColor;
+        return this.activeColor;
+    }
+
+    @Override
+    public int getTurnNumber() {
+        return this.fullmoveNumber;
     }
 
     private List<Pair<Integer, Integer>> PawnValidMoves(int x, int y) {

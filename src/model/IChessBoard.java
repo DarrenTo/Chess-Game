@@ -153,4 +153,10 @@ public interface IChessBoard {
      */
     Color getActiveColor();
 
+    /**
+     *
+     * @return Turn number
+     */
+    int getTurnNumber();
+
 }
